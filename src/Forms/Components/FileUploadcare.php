@@ -7,7 +7,7 @@ use Vormkracht10\FileUploadcare\Enums\Style;
 
 class FileUploadcare extends Field
 {
-    protected string $view = 'forms.components.file-uploadcare';
+    protected string $view = 'filament-fileuploadcare-component::forms.components.file-uploadcare';
 
     protected string $publicKey;
 
