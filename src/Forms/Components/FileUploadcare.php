@@ -24,7 +24,7 @@ class FileUploadcare extends Field
     public static function make(string $name): static
     {
         return parent::make($name)
-            ->publicKey(config('services.uploadcare.public_key'));
+            ->publicKey(config('file-uploadcare-component.public_key'));
     }
 
     public function publicKey(string $publicKey): static
