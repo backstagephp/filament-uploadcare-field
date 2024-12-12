@@ -61,15 +61,15 @@ class FileUploadcareServiceProvider extends PackageServiceProvider
     public function packageBooted(): void
     {
         // Asset Registration
-        // FilamentAsset::register(
-        //     $this->getAssets(),
-        //     $this->getAssetPackageName()
-        // );
+        FilamentAsset::register(
+            $this->getAssets(),
+            $this->getAssetPackageName()
+        );
 
-        // FilamentAsset::registerScriptData(
-        //     $this->getScriptData(),
-        //     $this->getAssetPackageName()
-        // );
+        FilamentAsset::registerScriptData(
+            $this->getScriptData(),
+            $this->getAssetPackageName()
+        );
 
         // Icon Registration
         FilamentIcon::register($this->getIcons());
@@ -99,8 +99,8 @@ class FileUploadcareServiceProvider extends PackageServiceProvider
     {
         return [
             // AlpineComponent::make('filament-fileuploadcare-component', __DIR__ . '/../resources/dist/components/filament-fileuploadcare-component.js'),
-            // Css::make('filament-fileuploadcare-component-styles', __DIR__ . '/../resources/dist/filament-fileuploadcare-component.css'),
-            // Js::make('filament-fileuploadcare-component-scripts', __DIR__ . '/../resources/dist/filament-fileuploadcare-component.js'),
+            Css::make('filament-fileuploadcare-component-styles', __DIR__ . '/../resources/dist/filament-fileuploadcare-component.css'),
+            Js::make('filament-fileuploadcare-component-scripts', __DIR__ . '/../resources/dist/filament-fileuploadcare-component.js'),
         ];
     }
 
