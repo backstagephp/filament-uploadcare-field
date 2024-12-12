@@ -83,8 +83,8 @@ class FileUploadcare extends Field
         return $this->imgOnly;
     }
 
-    public function getUploaderStyle(): Style
+    public function getUploaderStyle(): string
     {
-        return $this->uploaderStyle;
+        return $this->uploaderStyle->value;
     }
 }
