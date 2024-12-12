@@ -13,6 +13,11 @@ Hi! We are a web development agency from Nijmegen in the Netherlands and we use 
 
 This package provides a FileUpload component for Filament Forms that use [Uploadcare](https://uploadcare.com) as the file storage.
 
+### Our other Uploadcare related packages
+
+- [PHP Uploadcare Transformations](https://github.com/vormkracht10/php-uploadcare-transformations)
+- [Flysystem Uploadcare](https://github.com/vormkracht10/flysystem-uploadcare)
+
 ## Installation
 
 You can install the package via composer:
@@ -21,16 +26,10 @@ You can install the package via composer:
 composer require vormkracht10/filament-fileuploadcare-component
 ```
 
-You can publish the config file with:
+You can install the package by running the following command:
 
 ```bash
-php artisan vendor:publish --tag="filament-fileuploadcare-component-config"
-```
-
-Optionally, you can publish the views using
-
-```bash
-php artisan vendor:publish --tag="filament-fileuploadcare-component-views"
+php artisan filament-fileuploadcare-component:install
 ```
 
 This is the contents of the published config file:
@@ -42,6 +41,7 @@ return [
 ```
 
 ## Usage
+
 
 ```php
 use Vormkracht10\FileUploadcare\Forms\Components\FileUploadcare;
