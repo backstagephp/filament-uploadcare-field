@@ -10,10 +10,15 @@ class FileUploadcare extends Field
     protected string $view = 'forms.components.file-uploadcare';
 
     protected string $publicKey;
+
     protected bool $multiple = false;
+
     protected int $multipleMin = 0;
+
     protected int $multipleMax = 0;
+
     protected bool $imgOnly = false;
+
     protected Style $uploaderStyle = Style::INLINE;
 
     public static function make(string $name): static
@@ -25,6 +30,7 @@ class FileUploadcare extends Field
     public function publicKey(string $publicKey): static
     {
         $this->publicKey = $publicKey;
+
         return $this;
     }
 
@@ -33,12 +39,14 @@ class FileUploadcare extends Field
         $this->multiple = $multiple;
         $this->multipleMin = $min;
         $this->multipleMax = $max;
+
         return $this;
     }
 
     public function imagesOnly(bool $imgOnly = true): static
     {
         $this->imgOnly = $imgOnly;
+
         return $this;
     }
 
