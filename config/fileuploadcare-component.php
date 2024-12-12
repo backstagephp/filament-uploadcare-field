@@ -1,6 +1,5 @@
 <?php
 
-// config for Vormkracht10/FileUploadcare
 return [
-
+    'public_key' => env('UPLOADCARE_PUBLIC_KEY')
 ];
