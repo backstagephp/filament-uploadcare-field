@@ -5,9 +5,13 @@
 [![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/vormkracht10/filament-fileuploadcare-component/fix-php-code-styling.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/vormkracht10/filament-fileuploadcare-component/actions?query=workflow%3A"Fix+PHP+code+styling"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/vormkracht10/filament-fileuploadcare-component.svg?style=flat-square)](https://packagist.org/packages/vormkracht10/filament-fileuploadcare-component)
 
+## Nice to meet you, we're [Vormkracht10](https://vormkracht10.nl)
 
+Hi! We are a web development agency from Nijmegen in the Netherlands and we use Laravel for everything: advanced websites with a lot of bells and whitles and large web applications.
 
-This is where your description should go. Limit it to a paragraph or two. Consider adding a small example.
+## About the package
+
+This package provides a FileUpload component for Filament Forms that use [Uploadcare](https://uploadcare.com) as the file storage.
 
 ## Installation
 
@@ -15,13 +19,6 @@ You can install the package via composer:
 
 ```bash
 composer require vormkracht10/filament-fileuploadcare-component
-```
-
-You can publish and run the migrations with:
-
-```bash
-php artisan vendor:publish --tag="filament-fileuploadcare-component-migrations"
-php artisan migrate
 ```
 
 You can publish the config file with:
@@ -40,14 +37,28 @@ This is the contents of the published config file:
 
 ```php
 return [
+    'public_key' => env('UPLOADCARE_PUBLIC_KEY')
 ];
 ```
 
 ## Usage
 
 ```php
-$fileUploadcare = new Vormkracht10\FileUploadcare();
-echo $fileUploadcare->echoPhrase('Hello, Vormkracht10!');
+use Vormkracht10\FileUploadcare\Forms\Components\FileUploadcare;
+use Vormkracht10\FileUploadcare\Enums\Style;
+
+ public static function form(Form $form): Form
+{
+    return $form
+        ->schema([
+            FileUploadcare::make('images')
+                ->label('Images')
+                ->uploaderStyle(Style::INLINE)
+                ->multiple(false)
+                ->imagesOnly()
+                ->columnSpanFull(),
+        ]);
+}
 ```
 
 ## Testing
