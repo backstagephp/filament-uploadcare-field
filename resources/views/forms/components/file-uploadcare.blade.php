@@ -58,48 +58,30 @@
                             console.error('initialState is not a valid JSON string');
                         }
 
-                        console.log(Array.isArray(initialState));
                         if (Array.isArray(initialState)) {
-                            console.log('is array');
                             initialState.forEach(url => api.addFileFromCdnUrl(url));
                         } else {
                             api.addFileFromCdnUrl(initialState);
                         }
 
-                        @this.set(statePath, initialState); // Synchronize with Livewire
+                        @this.set(statePath, JSON.stringify(initialState)); // Synchronize with Livewire
                     }
 
                     this.ctx.addEventListener('file-upload-success', (e) => {
-                        console.log(e);
                         const file = e.detail.cdnUrl;
+                        const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
 
-                        if (this.uploadedFiles == '') {
-                            console.log('single or first file', this.uploadedFiles);
+                        currentFiles.push(file);
+                        this.uploadedFiles = JSON.stringify(currentFiles);
 
-                            this.uploadedFiles = file;
+                        this.$refs.hiddenInput.value = this.uploadedFiles;
+                        this.$refs.hiddenInput.dispatchEvent(
+                            new Event('input', {
+                                bubbles: true
+                            })
+                        );
 
-                            this.$refs.hiddenInput.value = file;
-                            this.$refs.hiddenInput.dispatchEvent(
-                                new Event('input', {
-                                    bubbles: true
-                                })
-                            );
-                            @this.set(statePath, file); // Synchronize with Livewire
-                        } else {
-                            this.uploadedFiles = this.uploadedFiles + ',' + file;
-
-                            console.log('multiple files', this.uploadedFiles);
-
-                            this.$refs.hiddenInput.value = this.uploadedFiles;
-                            this.$refs.hiddenInput.dispatchEvent(
-                                new Event('input', {
-                                    bubbles: true
-                                })
-                            );
-
-                            @this.set(statePath, JSON.stringify(this.uploadedFiles.split(
-                                ','))); // Synchronize with Livewire
-                        }
+                        @this.set(statePath, this.uploadedFiles); // Synchronize with Livewire
                     });
                 },
             };
