@@ -50,7 +50,6 @@
                     const collectionState = api.getOutputCollectionState();
 
                     if (initialState) {
-                        console.log('initialState', initialState);
 
                         try {
                             initialState = JSON.parse(initialState);
