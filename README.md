@@ -15,8 +15,8 @@ This package provides a FileUpload component for Filament Forms that use [Upload
 
 ### Our other Uploadcare related packages
 
-- [PHP Uploadcare Transformations](https://github.com/vormkracht10/php-uploadcare-transformations)
-- [Flysystem Uploadcare](https://github.com/vormkracht10/flysystem-uploadcare)
+-   [PHP Uploadcare Transformations](https://github.com/vormkracht10/php-uploadcare-transformations)
+-   [Flysystem Uploadcare](https://github.com/vormkracht10/flysystem-uploadcare)
 
 ## Installation
 
@@ -40,8 +40,10 @@ return [
 ];
 ```
 
-## Usage
+> [!WARNING]
+> Make sure you **don't** use the Flysystem Uploadcare driver when using Filament. There is a bug where all other files in Uploadcare will be deleted when using the Flysystem driver. This uploader uses the Javascript Uploadcare widget, so it's independent of the filesystem driver.
 
+## Usage
 
 ```php
 use Vormkracht10\FileUploadcare\Forms\Components\FileUploadcare;
@@ -81,8 +83,8 @@ Please review [our security policy](../../security/policy) on how to report secu
 
 ## Credits
 
-- [Baspa](https://github.com/vormkracht10)
-- [All Contributors](../../contributors)
+-   [Baspa](https://github.com/vormkracht10)
+-   [All Contributors](../../contributors)
 
 ## License
 
