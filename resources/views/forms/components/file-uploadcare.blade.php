@@ -83,6 +83,28 @@
 
                         @this.set(statePath, this.uploadedFiles); // Synchronize with Livewire
                     });
+
+                    this.ctx.addEventListener('file-removed', (e) => {
+                        const file = e.detail.cdnUrl;
+
+                        const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
+
+                        const index = currentFiles.indexOf(file);
+                        if (index > -1) {
+                            currentFiles.splice(index, 1);
+                        }
+
+                        this.uploadedFiles = JSON.stringify(currentFiles);
+
+                        this.$refs.hiddenInput.value = this.uploadedFiles;
+                        this.$refs.hiddenInput.dispatchEvent(
+                            new Event('input', {
+                                bubbles: true
+                            })
+                        );
+
+                        @this.set(statePath, this.uploadedFiles); // Synchronize with Livewire
+                    });
                 },
             };
         }
