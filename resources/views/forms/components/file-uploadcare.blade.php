@@ -83,6 +83,36 @@
                         @this.set(statePath, this.uploadedFiles); // Synchronize with Livewire
                     });
 
+                    this.ctx.addEventListener('file-url-changed', (e) => {
+
+                        const fileDetails = e.detail;
+                        const file = e.detail.cdnUrl;
+                        if (fileDetails.cdnUrlModifiers && fileDetails.cdnUrlModifiers !== "") {
+                            const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
+
+                            const fileUrl = currentFiles.find(url => url.includes(fileDetails.uuid));
+
+                            if (fileUrl) {
+                                const index = currentFiles.indexOf(fileUrl);
+
+                                if (index > -1) {
+                                    currentFiles[index] = file;
+                                }
+                            }
+
+                            this.uploadedFiles = JSON.stringify(currentFiles);
+
+                            this.$refs.hiddenInput.value = this.uploadedFiles;
+                            this.$refs.hiddenInput.dispatchEvent(
+                                new Event('input', {
+                                    bubbles: true
+                                })
+                            );
+
+                            @this.set(statePath, this.uploadedFiles); // Synchronize with Livewire
+                        }
+
+                    });
                     this.ctx.addEventListener('file-removed', (e) => {
                         const file = e.detail.cdnUrl;
 
