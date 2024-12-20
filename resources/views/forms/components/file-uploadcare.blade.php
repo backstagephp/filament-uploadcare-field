@@ -4,8 +4,7 @@
             @if ($field->isMultiple()) multiple @endif
             @if ($field->getMultipleMin() > 0) multiple-min="{{ $field->getMultipleMin() }}" @endif
             @if ($field->getMultipleMax() > 0) multiple-max="{{ $field->getMultipleMax() }}" @endif
-            @if ($field->isImagesOnly()) img-only @endif group-output
-            addFileFromCdnUrl="https://ucarecdn.com/b07ff2d9-def4-407e-b7d3-44a3c88a5ba3/">
+            @if ($field->isImagesOnly()) img-only @endif group-output>
         </uc-config>
 
         <uc-upload-ctx-provider ctx-name="{{ $getStatePath() }}" wire:ignore>
