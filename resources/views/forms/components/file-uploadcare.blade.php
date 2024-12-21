@@ -42,13 +42,21 @@
         function uploadcareField() {
             return {
                 uploadedFiles: '',
+                removeEventListeners: null,
+
                 initUploadcare(statePath, initialState) {
-                    this.ctx = document.querySelector('uc-upload-ctx-provider');
+                    // Clean up existing event listeners if they exist
+                    if (this.removeEventListeners) {
+                        this.removeEventListeners();
+                    }
 
-                    const uploaderCtx = document.querySelector('uc-upload-ctx-provider');
+                    this.ctx = document.querySelector(`uc-upload-ctx-provider[ctx-name="${statePath}"]`);
+                    if (!this.ctx) return;
+
+                    const uploaderCtx = this.ctx;
                     const api = uploaderCtx.getAPI();
-                    const collectionState = api.getOutputCollectionState();
 
+                    console.log('initialState', initialState);
                     if (initialState) {
                         try {
                             initialState = JSON.parse(initialState);
@@ -69,7 +77,7 @@
                         @this.set(statePath, JSON.stringify(initialState));
                     }
 
-                    this.ctx.addEventListener('file-upload-success', (e) => {
+                    const handleFileUploadSuccess = (e) => {
                         const fileData = {{ $field->isWithMetadata() ? 'e.detail' : 'e.detail.cdnUrl' }};
                         const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
 
@@ -84,9 +92,9 @@
                         );
 
                         @this.set(statePath, this.uploadedFiles);
-                    });
+                    };
 
-                    this.ctx.addEventListener('file-url-changed', (e) => {
+                    const handleFileUrlChanged = (e) => {
                         const fileDetails = e.detail;
                         if (fileDetails.cdnUrlModifiers && fileDetails.cdnUrlModifiers !== "") {
                             const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
@@ -116,9 +124,9 @@
 
                             @this.set(statePath, this.uploadedFiles);
                         }
-                    });
+                    };
 
-                    this.ctx.addEventListener('file-removed', (e) => {
+                    const handleFileRemoved = (e) => {
                         const fileData = {{ $field->isWithMetadata() ? 'e.detail' : 'e.detail.cdnUrl' }};
                         const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
 
@@ -146,7 +154,19 @@
                         );
 
                         @this.set(statePath, this.uploadedFiles);
-                    });
+                    };
+
+                    // Add event listeners
+                    this.ctx.addEventListener('file-upload-success', handleFileUploadSuccess);
+                    this.ctx.addEventListener('file-url-changed', handleFileUrlChanged);
+                    this.ctx.addEventListener('file-removed', handleFileRemoved);
+
+                    // Store cleanup function
+                    this.removeEventListeners = () => {
+                        this.ctx.removeEventListener('file-upload-success', handleFileUploadSuccess);
+                        this.ctx.removeEventListener('file-url-changed', handleFileUrlChanged);
+                        this.ctx.removeEventListener('file-removed', handleFileRemoved);
+                    };
                 },
             };
         }
