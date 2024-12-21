@@ -63,6 +63,40 @@ use Vormkracht10\FileUploadcare\Enums\Style;
 }
 ```
 
+If you want to have the metadata retrieved from Uploadcare available in the form data, you can use the `withMetadata` method:
+
+```php
+use Vormkracht10\FileUploadcare\Forms\Components\FileUploadcare;
+
+public static function form(Form $form): Form
+{
+    return $form
+        ->schema([
+            FileUploadcare::make('images')
+                ->label('Images')
+                ->withMetadata(),
+        ]);
+}
+```
+
+You will then manually have to add the metadata to the model, for example in the `mutateFormDataBeforeSave` method:
+
+```php
+// ...
+
+class EditContent extends EditRecord
+{
+    protected static string $resource = ContentResource::class;
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        // Handle the metadata here
+
+        return $data;
+    }
+}
+```
+
 ## Testing
 
 ```bash

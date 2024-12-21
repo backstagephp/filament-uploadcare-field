@@ -50,7 +50,6 @@
                     const collectionState = api.getOutputCollectionState();
 
                     if (initialState) {
-
                         try {
                             initialState = JSON.parse(initialState);
                         } catch (e) {
@@ -58,19 +57,23 @@
                         }
 
                         if (Array.isArray(initialState)) {
-                            initialState.forEach(url => api.addFileFromCdnUrl(url));
+                            initialState.forEach(item => {
+                                const url = typeof item === 'object' ? item.cdnUrl : item;
+                                api.addFileFromCdnUrl(url);
+                            });
                         } else {
-                            api.addFileFromCdnUrl(initialState);
+                            const url = typeof initialState === 'object' ? initialState.cdnUrl : initialState;
+                            api.addFileFromCdnUrl(url);
                         }
 
-                        @this.set(statePath, JSON.stringify(initialState)); // Synchronize with Livewire
+                        @this.set(statePath, JSON.stringify(initialState));
                     }
 
                     this.ctx.addEventListener('file-upload-success', (e) => {
-                        const file = e.detail.cdnUrl;
+                        const fileData = {{ $field->isWithMetadata() ? 'e.detail' : 'e.detail.cdnUrl' }};
                         const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
 
-                        currentFiles.push(file);
+                        currentFiles.push(fileData);
                         this.uploadedFiles = JSON.stringify(currentFiles);
 
                         this.$refs.hiddenInput.value = this.uploadedFiles;
@@ -80,24 +83,26 @@
                             })
                         );
 
-                        @this.set(statePath, this.uploadedFiles); // Synchronize with Livewire
+                        @this.set(statePath, this.uploadedFiles);
                     });
 
                     this.ctx.addEventListener('file-url-changed', (e) => {
-
                         const fileDetails = e.detail;
-                        const file = e.detail.cdnUrl;
                         if (fileDetails.cdnUrlModifiers && fileDetails.cdnUrlModifiers !== "") {
                             const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
 
-                            const fileUrl = currentFiles.find(url => url.includes(fileDetails.uuid));
+                            const findFile = (files, uuid) => {
+                                return files.findIndex(file => {
+                                    const fileUrl = typeof file === 'object' ? file.cdnUrl : file;
+                                    return fileUrl.includes(uuid);
+                                });
+                            };
 
-                            if (fileUrl) {
-                                const index = currentFiles.indexOf(fileUrl);
+                            const fileIndex = findFile(currentFiles, fileDetails.uuid);
 
-                                if (index > -1) {
-                                    currentFiles[index] = file;
-                                }
+                            if (fileIndex > -1) {
+                                currentFiles[fileIndex] =
+                                    {{ $field->isWithMetadata() ? 'fileDetails' : 'fileDetails.cdnUrl' }};
                             }
 
                             this.uploadedFiles = JSON.stringify(currentFiles);
@@ -109,16 +114,24 @@
                                 })
                             );
 
-                            @this.set(statePath, this.uploadedFiles); // Synchronize with Livewire
+                            @this.set(statePath, this.uploadedFiles);
                         }
-
                     });
-                    this.ctx.addEventListener('file-removed', (e) => {
-                        const file = e.detail.cdnUrl;
 
+                    this.ctx.addEventListener('file-removed', (e) => {
+                        const fileData = {{ $field->isWithMetadata() ? 'e.detail' : 'e.detail.cdnUrl' }};
                         const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
 
-                        const index = currentFiles.indexOf(file);
+                        const findFile = (files, fileToRemove) => {
+                            return files.findIndex(file => {
+                                const fileUrl = typeof file === 'object' ? file.cdnUrl : file;
+                                const removeUrl = typeof fileToRemove === 'object' ? fileToRemove
+                                    .cdnUrl : fileToRemove;
+                                return fileUrl === removeUrl;
+                            });
+                        };
+
+                        const index = findFile(currentFiles, fileData);
                         if (index > -1) {
                             currentFiles.splice(index, 1);
                         }
@@ -132,7 +145,7 @@
                             })
                         );
 
-                        @this.set(statePath, this.uploadedFiles); // Synchronize with Livewire
+                        @this.set(statePath, this.uploadedFiles);
                     });
                 },
             };

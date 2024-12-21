@@ -19,6 +19,8 @@ class FileUploadcare extends Field
 
     protected bool $imgOnly = false;
 
+    protected bool $withMetadata = false;
+
     protected Style $uploaderStyle = Style::INLINE;
 
     public static function make(string $name): static
@@ -85,5 +87,17 @@ class FileUploadcare extends Field
     public function getUploaderStyle(): string
     {
         return $this->uploaderStyle->value;
+    }
+
+    public function withMetadata(bool $withMetadata = true): static
+    {
+        $this->withMetadata = $withMetadata;
+
+        return $this;
+    }
+
+    public function isWithMetadata(): bool
+    {
+        return $this->withMetadata;
     }
 }
