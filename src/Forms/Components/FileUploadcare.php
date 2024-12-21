@@ -50,7 +50,6 @@ class FileUploadcare extends Field
         return $this;
     }
 
-    // Enum met Style en dan 'inline' of 'regular' of 'minimal'
     public function uploaderStyle(Style $style = Style::INLINE): static
     {
         $this->uploaderStyle = $style;
