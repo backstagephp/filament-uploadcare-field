@@ -1,5 +1,5 @@
 <x-dynamic-component :component="$getFieldWrapperView()" :field="$field">
-    <div x-data="uploadcareField()" x-init="initUploadcare('{{ $getStatePath() }}', @js($field->getState()))" wire:ignore.self>
+    <div x-data="uploadcareField()" x-init="initUploadcare('{{ $getStatePath() }}', @js($field->getState()))" wire:ignore.self class="uploadcare-wrapper">
         <uc-config ctx-name="{{ $getStatePath() }}" pubkey="{{ $field->getPublicKey() }}" use-cloud-image-editor="true"
             @if ($field->isMultiple()) multiple @endif
             @if ($field->getMultipleMin() > 0) multiple-min="{{ $field->getMultipleMin() }}" @endif
@@ -24,6 +24,42 @@
         $jsFile = "https://cdn.jsdelivr.net/npm/@uploadcare/file-uploader@v1/web/uc-file-uploader-{$style}.min.js";
     @endphp
     <link rel="stylesheet" href="{{ $cssFile }}">
+    <style>
+        /* Create a scoped wrapper class */
+        .uploadcare-wrapper {
+            /* Reset any inherited styles */
+            all: revert;
+        }
+
+        /* Scope all uploadcare elements */
+        .uploadcare-wrapper :where(uc-file-uploader-regular,
+            uc-file-uploader-minimal,
+            uc-file-uploader-inline,
+            uc-upload-ctx-provider,
+            uc-form-input) {
+            /* Ensure styles are scoped to these elements */
+            isolation: isolate;
+        }
+
+        /* Target specific Uploadcare elements */
+        .uploadcare-wrapper :where(.uc-done-btn,
+            .uc-primary-btn,
+            .uc-file-preview,
+            .uc-dropzone) {
+            /* Reset to default styles */
+            all: revert;
+            /* Add any custom styles needed */
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+
+        /* Ensure proper stacking context */
+        .uploadcare-wrapper {
+            position: relative;
+            z-index: 1;
+        }
+    </style>
+
     <script type="module">
         import * as UC from "{{ $jsFile }}";
         UC.defineComponents(UC);
