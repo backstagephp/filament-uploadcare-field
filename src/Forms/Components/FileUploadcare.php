@@ -112,7 +112,7 @@ class FileUploadcare extends Field
         return $this->withMetadata;
     }
 
-    public function sourceList(array|string $sourceList): static
+    public function sourceList(array | string $sourceList): static
     {
         $this->sourceList = is_array($sourceList) ? $sourceList : [$sourceList];
 
@@ -124,7 +124,7 @@ class FileUploadcare extends Field
         return implode(',', $this->sourceList);
     }
 
-    public function accept(array|string $accept): static
+    public function accept(array | string $accept): static
     {
         $this->accept = is_array($accept) ? $accept : [$accept];
 
