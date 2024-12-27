@@ -27,6 +27,13 @@ class FileUploadcare extends Field
         'local',
     ];
 
+    protected array $accept = [
+        'image/*',
+        'video/*',
+        'audio/*',
+        'application/*',
+    ];
+
     public static function make(string $name): static
     {
         return parent::make($name)
@@ -105,9 +112,9 @@ class FileUploadcare extends Field
         return $this->withMetadata;
     }
 
-    public function sourceList(array $sourceList): static
+    public function sourceList(array|string $sourceList): static
     {
-        $this->sourceList = $sourceList;
+        $this->sourceList = is_array($sourceList) ? $sourceList : [$sourceList];
 
         return $this;
     }
@@ -115,5 +122,17 @@ class FileUploadcare extends Field
     public function getSourceList(): string
     {
         return implode(',', $this->sourceList);
+    }
+
+    public function accept(array|string $accept): static
+    {
+        $this->accept = is_array($accept) ? $accept : [$accept];
+
+        return $this;
+    }
+
+    public function getAccept(): string
+    {
+        return implode(',', $this->accept);
     }
 }
