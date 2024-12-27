@@ -211,7 +211,7 @@
 
         const themeHandler = () => {
             const uploader = document.querySelector(`uc-file-uploader-{{ $field->getUploaderStyle() }}`);
-            if (!uploader || !localStorage.hasItem('theme')) return;
+            if (!uploader || !localStorage.getItem('theme')) return;
 
             const userTheme = localStorage.getItem('theme');
             const theme = userTheme === 'system' ?
