@@ -73,6 +73,8 @@
             if (doneButton) {
                 doneButton.style.display = 'none';
             }
+
+            themeHandler();
         });
 
         function uploadcareField() {
@@ -206,5 +208,17 @@
                 },
             };
         }
+
+        const themeHandler = () => {
+            const uploader = document.querySelector(`uc-file-uploader-{{ $field->getUploaderStyle() }}`);
+            if (!uploader || !localStorage.hasItem('theme')) return;
+
+            const userTheme = localStorage.getItem('theme');
+            const theme = userTheme === 'system' ?
+                (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') :
+                userTheme;
+
+            uploader.classList.add(`uc-${theme}`);
+        };
     </script>
 @endpush
