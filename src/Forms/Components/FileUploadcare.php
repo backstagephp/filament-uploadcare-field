@@ -23,6 +23,10 @@ class FileUploadcare extends Field
 
     protected Style $uploaderStyle = Style::INLINE;
 
+    protected array $sourceList = [
+        'local',
+    ];
+
     public static function make(string $name): static
     {
         return parent::make($name)
@@ -99,5 +103,17 @@ class FileUploadcare extends Field
     public function isWithMetadata(): bool
     {
         return $this->withMetadata;
+    }
+
+    public function sourceList(array $sourceList): static
+    {
+        $this->sourceList = $sourceList;
+
+        return $this;
+    }
+
+    public function getSourceList(): string
+    {
+        return implode(',', $this->sourceList);
     }
 }

@@ -4,7 +4,7 @@
             @if ($field->isMultiple()) multiple @endif
             @if ($field->getMultipleMin() > 0) multiple-min="{{ $field->getMultipleMin() }}" @endif
             @if ($field->getMultipleMax() > 0) multiple-max="{{ $field->getMultipleMax() }}" @endif
-            @if ($field->isImagesOnly()) img-only @endif group-output>
+            @if ($field->isImagesOnly()) img-only @endif group-output source-list="{{ $field->getSourceList() }}">
         </uc-config>
 
         <uc-upload-ctx-provider ctx-name="{{ $getStatePath() }}" wire:ignore>
