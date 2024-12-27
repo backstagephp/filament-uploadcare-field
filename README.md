@@ -11,7 +11,7 @@ Hi! We are a web development agency from Nijmegen in the Netherlands and we use 
 
 ## About the package
 
-This package provides a FileUpload component for Filament Forms that use [Uploadcare](https://uploadcare.com) as the file storage.
+This package provides a FileUpload component for Filament Forms that integrates with [Uploadcare](https://uploadcare.com) for file storage. It offers a flexible and customizable file upload experience with support for multiple files, image-only uploads, and metadata handling.
 
 ### Our other Uploadcare related packages
 
@@ -32,7 +32,7 @@ You can install the package by running the following command:
 php artisan filament-fileuploadcare-component:install
 ```
 
-This is the contents of the published config file:
+This will publish the configuration file with the following contents:
 
 ```php
 return [
@@ -41,59 +41,135 @@ return [
 ```
 
 > [!WARNING]
-> Make sure you **don't** use the Flysystem Uploadcare driver when using Filament. There is a bug where all other files in Uploadcare will be deleted when using the Flysystem driver. This uploader uses the Javascript Uploadcare widget, so it's independent of the filesystem driver.
+> Do not use the Flysystem Uploadcare driver with Filament, as it may cause unexpected deletion of files. This component uses the Javascript Uploadcare widget independently of the filesystem driver.
 
-## Usage
+## Basic Usage
 
 ```php
 use Vormkracht10\FileUploadcare\Forms\Components\FileUploadcare;
 use Vormkracht10\FileUploadcare\Enums\Style;
-
- public static function form(Form $form): Form
-{
-    return $form
-        ->schema([
-            FileUploadcare::make('images')
-                ->label('Images')
-                ->uploaderStyle(Style::INLINE)
-                ->multiple(false)
-                ->imagesOnly()
-                ->columnSpanFull(),
-        ]);
-}
-```
-
-If you want to have the metadata retrieved from Uploadcare available in the form data, you can use the `withMetadata` method:
-
-```php
-use Vormkracht10\FileUploadcare\Forms\Components\FileUploadcare;
 
 public static function form(Form $form): Form
 {
     return $form
         ->schema([
             FileUploadcare::make('images')
-                ->label('Images')
-                ->withMetadata(),
+                ->label('Images'),
         ]);
 }
 ```
 
-You will then manually have to add the metadata to the model, for example in the `mutateFormDataBeforeSave` method:
+## Available Methods
+
+### Configuration Methods
+
+#### `publicKey(string $publicKey)`
+
+Set a custom public key for Uploadcare:
 
 ```php
-// ...
+FileUploadcare::make('images')
+    ->publicKey('your-custom-key');
+```
 
+#### `uploaderStyle(Style $style)`
+
+Set the uploader style (default is `Style::INLINE`):
+
+```php
+FileUploadcare::make('images')
+    ->uploaderStyle(Style::INLINE);
+```
+
+### File Upload Options
+
+#### `multiple(bool $multiple = true, int $min = 0, int $max = 0)`
+
+Enable multiple file uploads with optional min/max constraints:
+
+```php
+FileUploadcare::make('images')
+    ->multiple(true, 2, 5); // Allow 2-5 files
+```
+
+#### `imagesOnly(bool $imgOnly = true)`
+
+Restrict uploads to image files only:
+
+```php
+FileUploadcare::make('images')
+    ->imagesOnly();
+```
+
+#### `accept(array|string $accept)`
+
+Specify allowed file types:
+
+```php
+FileUploadcare::make('documents')
+    ->accept(['image/*', 'application/pdf']);
+```
+
+#### `sourceList(array|string $sourceList)`
+
+Configure upload sources:
+
+```php
+FileUploadcare::make('images')
+    ->sourceList(['local', 'url', 'camera', 'dropbox']);
+```
+
+### Metadata Handling
+
+#### `withMetadata(bool $withMetadata = true)`
+
+Include file metadata in the form data:
+
+```php
+FileUploadcare::make('images')
+    ->withMetadata();
+```
+
+To handle the metadata in your form:
+
+```php
 class EditContent extends EditRecord
 {
     protected static string $resource = ContentResource::class;
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
-        // Handle the metadata here
+        if (isset($data['images'])) {
+            // Access metadata through $data['images']
+            // Process metadata as needed
+        }
 
         return $data;
     }
+}
+```
+
+## Complete Example
+
+Here's a comprehensive example showcasing multiple features:
+
+```php
+use Vormkracht10\FileUploadcare\Forms\Components\FileUploadcare;
+use Vormkracht10\FileUploadcare\Enums\Style;
+
+public static function form(Form $form): Form
+{
+    return $form
+        ->schema([
+            FileUploadcare::make('documents')
+                ->label('Documents')
+                ->uploaderStyle(Style::INLINE)
+                ->multiple(true, 1, 5)
+                ->accept(['application/pdf', 'image/*'])
+                ->sourceList(['local', 'url'])
+                ->withMetadata()
+                ->columnSpanFull(),
+        ]);
 }
 ```
 
