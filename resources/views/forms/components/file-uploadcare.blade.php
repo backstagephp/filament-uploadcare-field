@@ -5,7 +5,7 @@
             @if ($field->getMultipleMin() > 0) multiple-min="{{ $field->getMultipleMin() }}" @endif
             @if ($field->getMultipleMax() > 0) multiple-max="{{ $field->getMultipleMax() }}" @endif
             @if ($field->isImagesOnly()) img-only @else accept="{{ $field->getAccept() }}" @endif group-output
-            source-list="{{ $field->getSourceList() }}">
+            @if (count(explode(',', $field->getSourceList())) > 1) source-list="{{ $field->getSourceList() }}" @endif>>
         </uc-config>
         <uc-upload-ctx-provider ctx-name="{{ $getStatePath() }}" wire:ignore>
             <uc-file-uploader-{{ $field->getUploaderStyle() }} ctx-name="{{ $getStatePath() }}">
@@ -25,56 +25,64 @@
     @endphp
     <link rel="stylesheet" href="{{ $cssFile }}">
     <style>
-        /* Create a scoped wrapper class */
         .uploadcare-wrapper {
-            /* Reset any inherited styles */
             all: revert;
         }
 
-        /* Scope all uploadcare elements */
         .uploadcare-wrapper :where(uc-file-uploader-regular,
             uc-file-uploader-minimal,
             uc-file-uploader-inline,
             uc-upload-ctx-provider,
             uc-form-input) {
-            /* Ensure styles are scoped to these elements */
             isolation: isolate;
         }
 
-        /* Target specific Uploadcare elements */
         .uploadcare-wrapper :where(.uc-done-btn,
             .uc-primary-btn,
             .uc-file-preview,
             .uc-dropzone) {
-            /* Reset to default styles */
             all: revert;
-            /* Add any custom styles needed */
             font-family: inherit;
             box-sizing: border-box;
         }
 
-        /* Ensure proper stacking context */
         .uploadcare-wrapper {
             position: relative;
             z-index: 1;
+        }
+
+        /* Hide source list when there's only one source */
+        .single-source uc-source-list {
+            display: none !important;
         }
     </style>
 
     <script type="module">
         import * as UC from "{{ $jsFile }}";
         UC.defineComponents(UC);
+
+        // Add class to wrapper if there's only one source
+        document.addEventListener('DOMContentLoaded', () => {
+            const sourceList = '{{ $field->getSourceList() }}';
+            const sources = sourceList.split(',');
+            if (sources.length === 1) {
+                document.querySelector('.uploadcare-wrapper').classList.add('single-source');
+            }
+        });
     </script>
 @endpush
 
 @push('scripts')
     <script>
+        document.addEventListener('livewire:navigated', () => {
+            themeHandler();
+        });
+
         document.addEventListener('DOMContentLoaded', function() {
             const doneButton = document.querySelector('.uc-done-btn.uc-primary-btn');
             if (doneButton) {
                 doneButton.style.display = 'none';
             }
-
-            themeHandler();
         });
 
         function uploadcareField() {
