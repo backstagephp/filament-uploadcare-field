@@ -57,6 +57,10 @@
         .uploadcare-wrapper.single-source uc-source-list {
             display: none !important;
         }
+
+        .uc-image_container {
+            height: 400px !important;
+        }
     </style>
 
     <script type="module">
