@@ -43,6 +43,14 @@ return [
 > [!WARNING]
 > Do not use the Flysystem Uploadcare driver with Filament, as it may cause unexpected deletion of files. This component uses the Javascript Uploadcare widget independently of the filesystem driver.
 
+### Customization
+
+If you want to customize the view used by the component, you can publish the views:
+
+```bash
+php artisan vendor:publish --tag="filament-fileuploadcare-component-views"
+```
+
 ## Basic Usage
 
 ```php
