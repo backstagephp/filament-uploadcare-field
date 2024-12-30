@@ -61,6 +61,31 @@
         .uc-image_container {
             height: 400px !important;
         }
+
+        /* Dark theme customization */
+        .uc-dark {
+            --uc-background-dark: rgb(17 17 17);
+            --uc-foreground-dark: rgb(229 229 229);
+            --uc-primary-oklch-dark: 69% 0.1768 258.4;
+            --uc-primary-dark: rgb(161 161 161);
+            --uc-primary-hover-dark: rgb(113 113 113);
+            --uc-primary-transparent-dark: rgba(161, 161, 161, 0.075);
+            --uc-primary-foreground-dark: rgb(255 255 255);
+            --uc-secondary-dark: rgba(229, 229, 229, 0.07);
+            --uc-secondary-hover-dark: rgba(229, 229, 229, 0.1);
+            --uc-secondary-foreground-dark: rgb(229 229 229);
+            --uc-muted-dark: rgb(55 55 55);
+            --uc-muted-foreground-dark: rgb(156 156 156);
+            --uc-destructive-dark: rgba(239, 68, 68, 0.1);
+            --uc-destructive-foreground-dark: rgb(239 68 68);
+            --uc-border-dark: rgb(64 64 64);
+            --uc-dialog-shadow-dark: 0px 6px 20px rgba(0, 0, 0, 0.25);
+
+            /* SimpleBtn */
+            --uc-simple-btn-dark: rgb(55 55 55);
+            --uc-simple-btn-hover-dark: rgb(75 75 75);
+            --uc-simple-btn-foreground-dark: rgb(255 255 255);
+        }
     </style>
 
     <script type="module">
