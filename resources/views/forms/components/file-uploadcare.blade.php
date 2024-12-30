@@ -91,10 +91,35 @@
 
 @push('scripts')
     <script>
-        document.addEventListener('livewire:navigated', () => {
-            themeHandler();
-        });
+        // Define themeHandler only if it is not already defined
+        if (typeof themeHandler === 'undefined') {
+            const themeHandler = () => {
+                const uploaders = document.querySelectorAll('uc-file-uploader-{{ $field->getUploaderStyle() }}');
+                if (!uploaders.length || !localStorage.getItem('theme')) return;
 
+                const userTheme = localStorage.getItem('theme');
+                const theme = userTheme === 'system' ?
+                    (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') :
+                    userTheme;
+
+                uploaders.forEach(uploader => uploader.classList.add(`uc-${theme}`));
+            };
+
+            // Apply the theme on livewire navigation
+            document.addEventListener('livewire:navigated', () => {
+                themeHandler();
+            });
+
+            // Apply the theme on DOMContentLoaded
+            document.addEventListener('DOMContentLoaded', () => {
+                themeHandler();
+            });
+        }
+    </script>
+@endpush
+
+@push('scripts')
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
             const doneButton = document.querySelector('.uc-done-btn.uc-primary-btn');
             if (doneButton) {
@@ -233,17 +258,5 @@
                 },
             };
         }
-
-        const themeHandler = () => {
-            const uploader = document.querySelector(`uc-file-uploader-{{ $field->getUploaderStyle() }}`);
-            if (!uploader || !localStorage.getItem('theme')) return;
-
-            const userTheme = localStorage.getItem('theme');
-            const theme = userTheme === 'system' ?
-                (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') :
-                userTheme;
-
-            uploader.classList.add(`uc-${theme}`);
-        };
     </script>
 @endpush
