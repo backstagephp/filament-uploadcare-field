@@ -1,12 +1,14 @@
 <x-dynamic-component :component="$getFieldWrapperView()" :field="$field">
     <div x-data="uploadcareField()" x-init="initUploadcare('{{ $getStatePath() }}', @js($field->getState()))" wire:ignore.self class="uploadcare-wrapper">
+
         <uc-config ctx-name="{{ $getStatePath() }}" pubkey="{{ $field->getPublicKey() }}" use-cloud-image-editor="true"
             @if ($field->isMultiple()) multiple @endif
             @if ($field->getMultipleMin() > 0) multiple-min="{{ $field->getMultipleMin() }}" @endif
             @if ($field->getMultipleMax() > 0) multiple-max="{{ $field->getMultipleMax() }}" @endif
             @if ($field->isImagesOnly()) img-only @else accept="{{ $field->getAccept() }}" @endif group-output
-            @if (count(explode(',', $field->getSourceList())) > 1) source-list="{{ $field->getSourceList() }}" @endif>>
+            @if (count(explode(',', $field->getSourceList())) > 1) source-list="{{ $field->getSourceList() }}" @endif>
         </uc-config>
+
         <uc-upload-ctx-provider ctx-name="{{ $getStatePath() }}" wire:ignore>
             <uc-file-uploader-{{ $field->getUploaderStyle() }} ctx-name="{{ $getStatePath() }}">
                 <uc-form-input ctx-name="{{ $getStatePath() }}" wire:model="{{ $getStatePath() }}"></uc-form-input>
@@ -52,7 +54,7 @@
         }
 
         /* Hide source list when there's only one source */
-        .single-source uc-source-list {
+        .uploadcare-wrapper.single-source uc-source-list {
             display: none !important;
         }
     </style>
@@ -61,13 +63,28 @@
         import * as UC from "{{ $jsFile }}";
         UC.defineComponents(UC);
 
-        // Add class to wrapper if there's only one source
         document.addEventListener('DOMContentLoaded', () => {
-            const sourceList = '{{ $field->getSourceList() }}';
-            const sources = sourceList.split(',');
-            if (sources.length === 1) {
-                document.querySelector('.uploadcare-wrapper').classList.add('single-source');
-            }
+            const observer = new MutationObserver(() => {
+                const wrappers = document.querySelectorAll('.uploadcare-wrapper:not(.processed)');
+
+                wrappers.forEach(wrapper => {
+                    const sourceList = wrapper.querySelector('uc-config')?.getAttribute(
+                        'source-list') || '';
+                    const sources = sourceList.split(',');
+
+                    if (sources.length === 1) {
+                        wrapper.classList.add('single-source');
+                    }
+
+                    // Mark as processed to avoid reprocessing
+                    wrapper.classList.add('processed');
+                });
+            });
+
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
         });
     </script>
 @endpush
