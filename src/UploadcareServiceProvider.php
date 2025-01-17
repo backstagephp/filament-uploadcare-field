@@ -32,7 +32,6 @@ class UploadcareServiceProvider extends PackageServiceProvider
             ->hasCommands($this->getCommands())
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command
-                    ->publishConfigFile()
                     ->askToStarRepoOnGitHub('vormkracht10/filament-uploadcare-field');
             });
 

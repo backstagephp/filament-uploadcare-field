@@ -26,17 +26,13 @@ You can install the package via composer:
 composer require vormkracht10/filament-uploadcare-field
 ```
 
-You can install the package by running the following command:
-
-```bash
-php artisan filament-uploadcare-field:install
-```
-
-This will publish the configuration file with the following contents:
+Then you need to add the Uploadcare public key to your `services.php` config file:
 
 ```php
 return [
-    'public_key' => env('UPLOADCARE_PUBLIC_KEY')
+    'uploadcare' => [
+        'public_key' => env('UPLOADCARE_PUBLIC_KEY')
+    ]
 ];
 ```
 
