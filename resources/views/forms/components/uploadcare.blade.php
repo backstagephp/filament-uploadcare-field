@@ -37,6 +37,31 @@
             all: revert;
         }
 
+        /* Move our layout control styles after the initial reset */
+        body .uploadcare-wrapper.single-source uc-start-from .uc-content,
+        body .uploadcare-wrapper.single-source uc-file-uploader-regular .uc-start-from .uc-content,
+        body .uploadcare-wrapper.single-source uc-file-uploader-inline .uc-start-from .uc-content {
+            display: flex !important;
+            flex-direction: column !important;
+            gap: calc(var(--uc-padding)* 2);
+            width: 100%;
+            height: 100%;
+            padding: calc(var(--uc-padding)* 2);
+            background-color: var(--uc-background);
+        }
+
+        body .uploadcare-wrapper:not(.single-source) uc-start-from .uc-content,
+        body .uploadcare-wrapper:not(.single-source) uc-file-uploader-regular .uc-start-from .uc-content,
+        body .uploadcare-wrapper:not(.single-source) uc-file-uploader-inline .uc-start-from .uc-content {
+            display: grid !important;
+            grid-auto-flow: row;
+            gap: calc(var(--uc-padding)* 2);
+            width: 100%;
+            height: 100%;
+            padding: calc(var(--uc-padding)* 2);
+            background-color: var(--uc-background);
+        }
+
         .uploadcare-wrapper :where(uc-file-uploader-regular,
             uc-file-uploader-minimal,
             uc-file-uploader-inline,
@@ -107,14 +132,10 @@
             const sourceList = config.getAttribute('source-list') || '';
             const sources = sourceList.split(',');
 
-            console.log('Source list:', sourceList, 'Sources:', sources);
-
             if (sources.length === 1) {
-                console.log('Adding single-source class');
                 wrapper.classList.add('single-source');
             }
 
-            console.log('Adding processed class');
             // Mark as processed to avoid reprocessing
             wrapper.classList.add('processed');
         };
@@ -199,36 +220,25 @@
 
                     const initializeUploader = () => {
                         this.ctx = document.querySelector(`uc-upload-ctx-provider[ctx-name="${statePath}"]`);
-                        console.log('Attempting initialization...', {
-                            element: this.ctx,
-                            type: this.ctx?.constructor?.name,
-                            hasGetAPI: this.ctx?.getAPI
-                        });
 
                         // Try to get the API
                         let api;
                         try {
                             api = this.ctx?.getAPI();
-                            console.log('API state:', api);
 
                             // Test if the API is actually ready by trying to access a known method
                             if (!api || !api.addFileFromCdnUrl) {
-                                console.log('API not fully initialized, retrying...');
                                 setTimeout(initializeUploader, 100);
                                 return;
                             }
                         } catch (e) {
-                            console.log('Error getting API:', e);
                             setTimeout(initializeUploader, 100);
                             return;
                         }
 
                         if (!this.ctx || !api) {
-                            console.log('Context or API not available');
                             return;
                         }
-
-                        console.log('API fully initialized, proceeding with setup');
 
                         // Rest of your initialization code...
                         if (initialState) {
