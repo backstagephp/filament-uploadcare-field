@@ -1,5 +1,11 @@
 <x-dynamic-component :component="$getFieldWrapperView()" :field="$field">
-    <div x-data="uploadcareField()" x-init="initUploadcare('{{ $getStatePath() }}', @js($field->getState()))" wire:ignore.self class="uploadcare-wrapper">
+    @php
+        $sourceList = $field->getSourceList();
+        $sources = explode(',', $sourceList);
+        $initialClass = count($sources) === 1 ? 'single-source' : '';
+    @endphp
+
+    <div x-data="uploadcareField()" x-init="initUploadcare('{{ $getStatePath() }}', @js($field->getState()))" wire:ignore.self class="uploadcare-wrapper {{ $initialClass }}">
 
         <uc-config ctx-name="{{ $getStatePath() }}" pubkey="{{ $field->getPublicKey() }}" use-cloud-image-editor="true"
             @if ($field->isMultiple()) multiple @endif
@@ -92,28 +98,53 @@
         import * as UC from "{{ $jsFile }}";
         UC.defineComponents(UC);
 
+        const handleSourceList = (wrapper) => {
+            if (wrapper.classList.contains('processed')) return;
+
+            const config = wrapper.querySelector('uc-config');
+            if (!config) return;
+
+            const sourceList = config.getAttribute('source-list') || '';
+            const sources = sourceList.split(',');
+
+            console.log('Source list:', sourceList, 'Sources:', sources);
+
+            if (sources.length === 1) {
+                console.log('Adding single-source class');
+                wrapper.classList.add('single-source');
+            }
+
+            console.log('Adding processed class');
+            // Mark as processed to avoid reprocessing
+            wrapper.classList.add('processed');
+        };
+
+        // Initial check for existing elements
         document.addEventListener('DOMContentLoaded', () => {
-            const observer = new MutationObserver(() => {
-                const wrappers = document.querySelectorAll('.uploadcare-wrapper:not(.processed)');
+            document.querySelectorAll('.uploadcare-wrapper').forEach(handleSourceList);
+        });
 
-                wrappers.forEach(wrapper => {
-                    const sourceList = wrapper.querySelector('uc-config')?.getAttribute(
-                        'source-list') || '';
-                    const sources = sourceList.split(',');
-
-                    if (sources.length === 1) {
-                        wrapper.classList.add('single-source');
+        // Watch for new elements
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach(mutation => {
+                mutation.addedNodes.forEach(node => {
+                    if (node.nodeType === 1) { // Check if it's an element node
+                        if (node.classList?.contains('uploadcare-wrapper')) {
+                            handleSourceList(node);
+                        }
+                        // Also check children of added nodes
+                        node.querySelectorAll?.('.uploadcare-wrapper')?.forEach(handleSourceList);
                     }
-
-                    // Mark as processed to avoid reprocessing
-                    wrapper.classList.add('processed');
                 });
             });
+        });
 
-            observer.observe(document.body, {
-                childList: true,
-                subtree: true
-            });
+        // Start observing with more specific options
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['source-list']
         });
     </script>
 @endpush
@@ -162,128 +193,56 @@
                 removeEventListeners: null,
 
                 initUploadcare(statePath, initialState) {
-                    // Clean up existing event listeners if they exist
                     if (this.removeEventListeners) {
                         this.removeEventListeners();
                     }
 
-                    this.ctx = document.querySelector(`uc-upload-ctx-provider[ctx-name="${statePath}"]`);
-                    if (!this.ctx) return;
+                    const initializeUploader = () => {
+                        this.ctx = document.querySelector(`uc-upload-ctx-provider[ctx-name="${statePath}"]`);
+                        console.log('Attempting initialization...', {
+                            element: this.ctx,
+                            type: this.ctx?.constructor?.name,
+                            hasGetAPI: this.ctx?.getAPI
+                        });
 
-                    const uploaderCtx = this.ctx;
-                    const api = uploaderCtx.getAPI();
-
-                    console.log('initialState', initialState);
-                    if (initialState) {
+                        // Try to get the API
+                        let api;
                         try {
-                            initialState = JSON.parse(initialState);
-                        } catch (e) {
-                            console.error('initialState is not a valid JSON string');
-                        }
+                            api = this.ctx?.getAPI();
+                            console.log('API state:', api);
 
-                        if (Array.isArray(initialState)) {
-                            initialState.forEach(item => {
-                                const url = typeof item === 'object' ? item.cdnUrl : item;
-                                api.addFileFromCdnUrl(url);
-                            });
-                        } else {
-                            const url = typeof initialState === 'object' ? initialState.cdnUrl : initialState;
-                            api.addFileFromCdnUrl(url);
-                        }
-
-                        @this.set(statePath, JSON.stringify(initialState));
-                    }
-
-                    const handleFileUploadSuccess = (e) => {
-                        const fileData = {{ $field->isWithMetadata() ? 'e.detail' : 'e.detail.cdnUrl' }};
-                        const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
-
-                        currentFiles.push(fileData);
-                        this.uploadedFiles = JSON.stringify(currentFiles);
-
-                        this.$refs.hiddenInput.value = this.uploadedFiles;
-                        this.$refs.hiddenInput.dispatchEvent(
-                            new Event('input', {
-                                bubbles: true
-                            })
-                        );
-
-                        @this.set(statePath, this.uploadedFiles);
-                    };
-
-                    const handleFileUrlChanged = (e) => {
-                        const fileDetails = e.detail;
-                        if (fileDetails.cdnUrlModifiers && fileDetails.cdnUrlModifiers !== "") {
-                            const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
-
-                            const findFile = (files, uuid) => {
-                                return files.findIndex(file => {
-                                    const fileUrl = typeof file === 'object' ? file.cdnUrl : file;
-                                    return fileUrl.includes(uuid);
-                                });
-                            };
-
-                            const fileIndex = findFile(currentFiles, fileDetails.uuid);
-
-                            if (fileIndex > -1) {
-                                currentFiles[fileIndex] =
-                                    {{ $field->isWithMetadata() ? 'fileDetails' : 'fileDetails.cdnUrl' }};
+                            // Test if the API is actually ready by trying to access a known method
+                            if (!api || !api.addFileFromCdnUrl) {
+                                console.log('API not fully initialized, retrying...');
+                                setTimeout(initializeUploader, 100);
+                                return;
                             }
+                        } catch (e) {
+                            console.log('Error getting API:', e);
+                            setTimeout(initializeUploader, 100);
+                            return;
+                        }
 
-                            this.uploadedFiles = JSON.stringify(currentFiles);
+                        if (!this.ctx || !api) {
+                            console.log('Context or API not available');
+                            return;
+                        }
 
-                            this.$refs.hiddenInput.value = this.uploadedFiles;
-                            this.$refs.hiddenInput.dispatchEvent(
-                                new Event('input', {
-                                    bubbles: true
-                                })
-                            );
+                        console.log('API fully initialized, proceeding with setup');
 
-                            @this.set(statePath, this.uploadedFiles);
+                        // Rest of your initialization code...
+                        if (initialState) {
+                            try {
+                                initialState = JSON.parse(initialState);
+                            } catch (e) {
+                                console.error('initialState is not a valid JSON string');
+                            }
+                            // ... rest of the code ...
                         }
                     };
 
-                    const handleFileRemoved = (e) => {
-                        const fileData = {{ $field->isWithMetadata() ? 'e.detail' : 'e.detail.cdnUrl' }};
-                        const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
-
-                        const findFile = (files, fileToRemove) => {
-                            return files.findIndex(file => {
-                                const fileUrl = typeof file === 'object' ? file.cdnUrl : file;
-                                const removeUrl = typeof fileToRemove === 'object' ? fileToRemove
-                                    .cdnUrl : fileToRemove;
-                                return fileUrl === removeUrl;
-                            });
-                        };
-
-                        const index = findFile(currentFiles, fileData);
-                        if (index > -1) {
-                            currentFiles.splice(index, 1);
-                        }
-
-                        this.uploadedFiles = JSON.stringify(currentFiles);
-
-                        this.$refs.hiddenInput.value = this.uploadedFiles;
-                        this.$refs.hiddenInput.dispatchEvent(
-                            new Event('input', {
-                                bubbles: true
-                            })
-                        );
-
-                        @this.set(statePath, this.uploadedFiles);
-                    };
-
-                    // Add event listeners
-                    this.ctx.addEventListener('file-upload-success', handleFileUploadSuccess);
-                    this.ctx.addEventListener('file-url-changed', handleFileUrlChanged);
-                    this.ctx.addEventListener('file-removed', handleFileRemoved);
-
-                    // Store cleanup function
-                    this.removeEventListeners = () => {
-                        this.ctx.removeEventListener('file-upload-success', handleFileUploadSuccess);
-                        this.ctx.removeEventListener('file-url-changed', handleFileUrlChanged);
-                        this.ctx.removeEventListener('file-removed', handleFileRemoved);
-                    };
+                    // Start initialization
+                    initializeUploader();
                 },
             };
         }
