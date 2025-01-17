@@ -1,6 +1,6 @@
 <?php
 
-namespace Vormkracht10\FileUploadcare\Database\Factories;
+namespace Vormkracht10\Uploadcare\Database\Factories;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 

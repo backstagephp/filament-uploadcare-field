@@ -1,6 +1,6 @@
 <?php
 
-namespace Vormkracht10\FileUploadcare\Enums;
+namespace Vormkracht10\Uploadcare\Enums;
 
 enum Style: string
 {

@@ -1,9 +1,9 @@
 # Uploadcare FileUpload component for Filament Forms
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/vormkracht10/filament-fileuploadcare-component.svg?style=flat-square)](https://packagist.org/packages/vormkracht10/filament-fileuploadcare-component)
-[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/vormkracht10/filament-fileuploadcare-component/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/vormkracht10/filament-fileuploadcare-component/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/vormkracht10/filament-fileuploadcare-component/fix-php-code-styling.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/vormkracht10/filament-fileuploadcare-component/actions?query=workflow%3A"Fix+PHP+code+styling"+branch%3Amain)
-[![Total Downloads](https://img.shields.io/packagist/dt/vormkracht10/filament-fileuploadcare-component.svg?style=flat-square)](https://packagist.org/packages/vormkracht10/filament-fileuploadcare-component)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/vormkracht10/filament-uploadcare-field.svg?style=flat-square)](https://packagist.org/packages/vormkracht10/filament-uploadcare-field)
+[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/vormkracht10/filament-uploadcare-field/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/vormkracht10/filament-uploadcare-field/actions?query=workflow%3Arun-tests+branch%3Amain)
+[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/vormkracht10/filament-uploadcare-field/fix-php-code-styling.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/vormkracht10/filament-uploadcare-field/actions?query=workflow%3A"Fix+PHP+code+styling"+branch%3Amain)
+[![Total Downloads](https://img.shields.io/packagist/dt/vormkracht10/filament-uploadcare-field.svg?style=flat-square)](https://packagist.org/packages/vormkracht10/filament-uploadcare-field)
 
 ## Nice to meet you, we're [Vormkracht10](https://vormkracht10.nl)
 
@@ -23,13 +23,13 @@ This package provides a FileUpload component for Filament Forms that integrates 
 You can install the package via composer:
 
 ```bash
-composer require vormkracht10/filament-fileuploadcare-component
+composer require vormkracht10/filament-uploadcare-field
 ```
 
 You can install the package by running the following command:
 
 ```bash
-php artisan filament-fileuploadcare-component:install
+php artisan filament-uploadcare-field:install
 ```
 
 This will publish the configuration file with the following contents:
@@ -48,20 +48,20 @@ return [
 If you want to customize the view used by the component, you can publish the views:
 
 ```bash
-php artisan vendor:publish --tag="filament-fileuploadcare-component-views"
+php artisan vendor:publish --tag="filament-uploadcare-field-views"
 ```
 
 ## Basic Usage
 
 ```php
-use Vormkracht10\FileUploadcare\Forms\Components\FileUploadcare;
-use Vormkracht10\FileUploadcare\Enums\Style;
+use Vormkracht10\Uploadcare\Forms\Components\Uploadcare;
+use Vormkracht10\Uploadcare\Enums\Style;
 
 public static function form(Form $form): Form
 {
     return $form
         ->schema([
-            FileUploadcare::make('images')
+            Uploadcare::make('images')
                 ->label('Images'),
         ]);
 }
@@ -76,7 +76,7 @@ public static function form(Form $form): Form
 Set a custom public key for Uploadcare:
 
 ```php
-FileUploadcare::make('images')
+Uploadcare::make('images')
     ->publicKey('your-custom-key');
 ```
 
@@ -85,7 +85,7 @@ FileUploadcare::make('images')
 Set the uploader style (default is `Style::INLINE`):
 
 ```php
-FileUploadcare::make('images')
+Uploadcare::make('images')
     ->uploaderStyle(Style::INLINE);
 ```
 
@@ -96,7 +96,7 @@ FileUploadcare::make('images')
 Enable multiple file uploads with optional min/max constraints:
 
 ```php
-FileUploadcare::make('images')
+Uploadcare::make('images')
     ->multiple(true, 2, 5); // Allow 2-5 files
 ```
 
@@ -105,7 +105,7 @@ FileUploadcare::make('images')
 Restrict uploads to image files only:
 
 ```php
-FileUploadcare::make('images')
+Uploadcare::make('images')
     ->imagesOnly();
 ```
 
@@ -114,7 +114,7 @@ FileUploadcare::make('images')
 Specify allowed file types:
 
 ```php
-FileUploadcare::make('documents')
+Uploadcare::make('documents')
     ->accept(['image/*', 'application/pdf']);
 ```
 
@@ -123,7 +123,7 @@ FileUploadcare::make('documents')
 Configure upload sources:
 
 ```php
-FileUploadcare::make('images')
+Uploadcare::make('images')
     ->sourceList(['local', 'url', 'camera', 'dropbox']);
 ```
 
@@ -134,7 +134,7 @@ FileUploadcare::make('images')
 Include file metadata in the form data:
 
 ```php
-FileUploadcare::make('images')
+Uploadcare::make('images')
     ->withMetadata();
 ```
 
@@ -162,14 +162,14 @@ class EditContent extends EditRecord
 Here's a comprehensive example showcasing multiple features:
 
 ```php
-use Vormkracht10\FileUploadcare\Forms\Components\FileUploadcare;
-use Vormkracht10\FileUploadcare\Enums\Style;
+use Vormkracht10\Uploadcare\Forms\Components\Uploadcare;
+use Vormkracht10\Uploadcare\Enums\Style;
 
 public static function form(Form $form): Form
 {
     return $form
         ->schema([
-            FileUploadcare::make('documents')
+            Uploadcare::make('documents')
                 ->label('Documents')
                 ->uploaderStyle(Style::INLINE)
                 ->multiple(true, 1, 5)

@@ -1,13 +1,13 @@
 <?php
 
-namespace Vormkracht10\FileUploadcare\Testing;
+namespace Vormkracht10\Uploadcare\Testing;
 
 use Livewire\Features\SupportTesting\Testable;
 
 /**
  * @mixin Testable
  */
-class TestsFileUploadcare
+class TestsUploadcare
 {
     //
 }

@@ -1,6 +1,6 @@
 <?php
 
-namespace Vormkracht10\FileUploadcare;
+namespace Vormkracht10\Uploadcare;
 
 use Filament\Support\Assets\AlpineComponent;
 use Filament\Support\Assets\Asset;
@@ -13,14 +13,13 @@ use Livewire\Features\SupportTesting\Testable;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Vormkracht10\FileUploadcare\Commands\FileUploadcareCommand;
-use Vormkracht10\FileUploadcare\Testing\TestsFileUploadcare;
+use Vormkracht10\Uploadcare\Testing\TestsUploadcare;
 
-class FileUploadcareServiceProvider extends PackageServiceProvider
+class UploadcareServiceProvider extends PackageServiceProvider
 {
-    public static string $name = 'filament-fileuploadcare-component';
+    public static string $name = 'filament-uploadcare-field';
 
-    public static string $viewNamespace = 'filament-fileuploadcare-component';
+    public static string $viewNamespace = 'filament-uploadcare-field';
 
     public function configurePackage(Package $package): void
     {
@@ -34,7 +33,7 @@ class FileUploadcareServiceProvider extends PackageServiceProvider
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command
                     ->publishConfigFile()
-                    ->askToStarRepoOnGitHub('vormkracht10/filament-fileuploadcare-component');
+                    ->askToStarRepoOnGitHub('vormkracht10/filament-uploadcare-field');
             });
 
         $configFileName = $package->shortName();
@@ -78,18 +77,18 @@ class FileUploadcareServiceProvider extends PackageServiceProvider
         if (app()->runningInConsole()) {
             foreach (app(Filesystem::class)->files(__DIR__ . '/../stubs/') as $file) {
                 $this->publishes([
-                    $file->getRealPath() => base_path("stubs/filament-fileuploadcare-component/{$file->getFilename()}"),
-                ], 'filament-fileuploadcare-component-stubs');
+                    $file->getRealPath() => base_path("stubs/filament-uploadcare-field/{$file->getFilename()}"),
+                ], 'filament-uploadcare-field-stubs');
             }
         }
 
         // Testing
-        Testable::mixin(new TestsFileUploadcare);
+        Testable::mixin(new TestsUploadcare);
     }
 
     protected function getAssetPackageName(): ?string
     {
-        return 'vormkracht10/filament-fileuploadcare-component';
+        return 'vormkracht10/filament-uploadcare-field';
     }
 
     /**
@@ -98,9 +97,9 @@ class FileUploadcareServiceProvider extends PackageServiceProvider
     protected function getAssets(): array
     {
         return [
-            // AlpineComponent::make('filament-fileuploadcare-component', __DIR__ . '/../resources/dist/components/filament-fileuploadcare-component.js'),
-            // Css::make('filament-fileuploadcare-component-styles', __DIR__ . '/../resources/dist/filament-fileuploadcare-component.css'),
-            // Js::make('filament-fileuploadcare-component-scripts', __DIR__ . '/../resources/dist/filament-fileuploadcare-component.js'),
+            // AlpineComponent::make('filament-uploadcare-field', __DIR__ . '/../resources/dist/components/filament-uploadcare-field.js'),
+            // Css::make('filament-uploadcare-field-styles', __DIR__ . '/../resources/dist/filament-uploadcare-field.css'),
+            // Js::make('filament-uploadcare-field-scripts', __DIR__ . '/../resources/dist/filament-uploadcare-field.js'),
         ];
     }
 
@@ -109,9 +108,7 @@ class FileUploadcareServiceProvider extends PackageServiceProvider
      */
     protected function getCommands(): array
     {
-        return [
-            FileUploadcareCommand::class,
-        ];
+        return [];
     }
 
     /**
@@ -144,7 +141,7 @@ class FileUploadcareServiceProvider extends PackageServiceProvider
     protected function getMigrations(): array
     {
         return [
-            'create_filament-fileuploadcare-component_table',
+            'create_filament-uploadcare-field_table',
         ];
     }
 }

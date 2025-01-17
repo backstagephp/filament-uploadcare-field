@@ -1,13 +1,13 @@
 <?php
 
-namespace Vormkracht10\FileUploadcare\Forms\Components;
+namespace Vormkracht10\Uploadcare\Forms\Components;
 
 use Filament\Forms\Components\Field;
-use Vormkracht10\FileUploadcare\Enums\Style;
+use Vormkracht10\Uploadcare\Enums\Style;
 
-class FileUploadcare extends Field
+class Uploadcare extends Field
 {
-    protected string $view = 'filament-fileuploadcare-component::forms.components.file-uploadcare';
+    protected string $view = 'filament-uploadcare-field::forms.components.uploadcare';
 
     protected string $publicKey;
 
@@ -37,7 +37,7 @@ class FileUploadcare extends Field
     public static function make(string $name): static
     {
         return parent::make($name)
-            ->publicKey(config('filament-fileuploadcare-component.public_key'));
+            ->publicKey(config('uploadcare-field.public_key'));
     }
 
     public function publicKey(string $publicKey): static

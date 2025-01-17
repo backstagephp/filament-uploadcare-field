@@ -1,15 +1,15 @@
 {
-    "name": "vormkracht10/filament-fileuploadcare-component",
+    "name": "vormkracht10/filament-uploadcare-field",
     "description": "Uploadcare FileUpload component for Filament Forms",
     "keywords": [
         "vormkracht10",
         "laravel",
-        "filament-fileuploadcare-component"
+        "filament-uploadcare-field"
     ],
-    "homepage": "https://github.com/vormkracht10/filament-fileuploadcare-component",
+    "homepage": "https://github.com/vormkracht10/filament-uploadcare-field",
     "support": {
-        "issues": "https://github.com/vormkracht10/filament-fileuploadcare-component/issues",
-        "source": "https://github.com/vormkracht10/filament-fileuploadcare-component"
+        "issues": "https://github.com/vormkracht10/filament-uploadcare-field/issues",
+        "source": "https://github.com/vormkracht10/filament-uploadcare-field"
     },
     "license": "MIT",
     "authors": [
@@ -38,13 +38,13 @@
     },
     "autoload": {
         "psr-4": {
-            "Vormkracht10\\FileUploadcare\\": "src/",
-            "Vormkracht10\\FileUploadcare\\Database\\Factories\\": "database/factories/"
+            "Vormkracht10\\Uploadcare\\": "src/",
+            "Vormkracht10\\Uploadcare\\Database\\Factories\\": "database/factories/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Vormkracht10\\FileUploadcare\\Tests\\": "tests/"
+            "Vormkracht10\\Uploadcare\\Tests\\": "tests/"
         }
     },
     "scripts": {
@@ -64,10 +64,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "Vormkracht10\\FileUploadcare\\FileUploadcareServiceProvider"
+                "Vormkracht10\\Uploadcare\\UploadcareServiceProvider"
             ],
             "aliases": {
-                "FileUploadcare": "Vormkracht10\\FileUploadcare\\Facades\\FileUploadcare"
+                "Uploadcare": "Vormkracht10\\Uploadcare\\Facades\\Uploadcare"
             }
         }
     },
