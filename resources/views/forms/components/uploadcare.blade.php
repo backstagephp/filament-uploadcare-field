@@ -247,8 +247,97 @@
                             } catch (e) {
                                 console.error('initialState is not a valid JSON string');
                             }
-                            // ... rest of the code ...
+
+                            if (Array.isArray(initialState)) {
+                                initialState.forEach(item => {
+                                    const url = typeof item === 'object' ? item.cdnUrl : item;
+                                    api.addFileFromCdnUrl(url);
+                                });
+                            } else {
+                                const url = typeof initialState === 'object' ? initialState.cdnUrl : initialState;
+                                api.addFileFromCdnUrl(url);
+                            }
+
+                            @this.set(statePath, JSON.stringify(initialState));
                         }
+
+                        // Set up event listeners
+                        const handleFileUploadSuccess = (e) => {
+                            const fileData = {{ $field->isWithMetadata() ? 'e.detail' : 'e.detail.cdnUrl' }};
+                            const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
+                            
+                            currentFiles.push(fileData);
+                            this.uploadedFiles = JSON.stringify(currentFiles);
+                            
+                            this.$refs.hiddenInput.value = this.uploadedFiles;
+                            this.$refs.hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
+                            
+                            @this.set(statePath, this.uploadedFiles);
+                        };
+
+                        const handleFileUrlChanged = (e) => {
+                            const fileDetails = e.detail;
+                            if (fileDetails.cdnUrlModifiers && fileDetails.cdnUrlModifiers !== "") {
+                                const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
+                                
+                                const findFile = (files, uuid) => {
+                                    return files.findIndex(file => {
+                                        const fileUrl = typeof file === 'object' ? file.cdnUrl : file;
+                                        return fileUrl.includes(uuid);
+                                    });
+                                };
+                                
+                                const fileIndex = findFile(currentFiles, fileDetails.uuid);
+                                
+                                if (fileIndex > -1) {
+                                    currentFiles[fileIndex] = {{ $field->isWithMetadata() ? 'fileDetails' : 'fileDetails.cdnUrl' }};
+                                }
+                                
+                                this.uploadedFiles = JSON.stringify(currentFiles);
+                                
+                                this.$refs.hiddenInput.value = this.uploadedFiles;
+                                this.$refs.hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                
+                                @this.set(statePath, this.uploadedFiles);
+                            }
+                        };
+
+                        const handleFileRemoved = (e) => {
+                            const fileData = {{ $field->isWithMetadata() ? 'e.detail' : 'e.detail.cdnUrl' }};
+                            const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
+                            
+                            const findFile = (files, fileToRemove) => {
+                                return files.findIndex(file => {
+                                    const fileUrl = typeof file === 'object' ? file.cdnUrl : file;
+                                    const removeUrl = typeof fileToRemove === 'object' ? fileToRemove.cdnUrl : fileToRemove;
+                                    return fileUrl === removeUrl;
+                                });
+                            };
+                            
+                            const index = findFile(currentFiles, fileData);
+                            if (index > -1) {
+                                currentFiles.splice(index, 1);
+                            }
+                            
+                            this.uploadedFiles = JSON.stringify(currentFiles);
+                            
+                            this.$refs.hiddenInput.value = this.uploadedFiles;
+                            this.$refs.hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
+                            
+                            @this.set(statePath, this.uploadedFiles);
+                        };
+
+                        // Add event listeners
+                        this.ctx.addEventListener('file-upload-success', handleFileUploadSuccess);
+                        this.ctx.addEventListener('file-url-changed', handleFileUrlChanged);
+                        this.ctx.addEventListener('file-removed', handleFileRemoved);
+
+                        // Store cleanup function
+                        this.removeEventListeners = () => {
+                            this.ctx.removeEventListener('file-upload-success', handleFileUploadSuccess);
+                            this.ctx.removeEventListener('file-url-changed', handleFileUrlChanged);
+                            this.ctx.removeEventListener('file-removed', handleFileRemoved);
+                        };
                     };
 
                     // Start initialization
