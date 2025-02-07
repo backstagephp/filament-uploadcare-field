@@ -23,7 +23,7 @@
         "php": "^8.1",
         "filament/forms": "^3.0",
         "spatie/laravel-package-tools": "^1.15.0",
-        "vormkracht10/filament-fields": "dev-main"
+        "backstage/fields": "dev-main"
     },
     "require-dev": {
         "laravel/pint": "^1.0",
@@ -75,9 +75,9 @@
     "minimum-stability": "dev",
     "prefer-stable": true,
     "repositories": {
-        "vormkracht10/filament-fields": {
+        "backstage/fields": {
             "type": "git",
-            "url": "https://github.com/vormkracht10/filament-fields.git"
+            "url": "https://github.com/backstagephp/fields.git"
         }
     }
 }
