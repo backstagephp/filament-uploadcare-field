@@ -241,11 +241,14 @@
         function uploadcareField() {
             return {
                 uploadedFiles: '',
+                removeEventListeners: null,
                 
                 initUploadcare(statePath, initialState) {
                     if (this.removeEventListeners) {
                         this.removeEventListeners();
                     }
+
+                    console.log(initialState, statePath);
 
                     // Parse initial state right away
                     if (initialState) {
@@ -267,7 +270,7 @@
                         try {
                             api = this.ctx?.getAPI();
 
-                            // Test if the API is actually ready by trying to access a known method
+                            // Test if the API is actually ready
                             if (!api || !api.addFileFromCdnUrl) {
                                 setTimeout(initializeUploader, 100);
                                 return;
@@ -281,91 +284,60 @@
                             return;
                         }
 
-                        // Rest of your initialization code...
+                        // Handle initial state
                         if (initialState) {
                             try {
-                                initialState = JSON.parse(initialState);
-                            } catch (e) {
-                                console.error('initialState is not a valid JSON string');
-                            }
-
-                            if (Array.isArray(initialState)) {
-                                initialState.forEach(item => {
-                                    const url = typeof item === 'object' ? item.cdnUrl : item;
+                                const files = JSON.parse(initialState);
+                                if (Array.isArray(files)) {
+                                    files.forEach(item => {
+                                        const url = typeof item === 'object' ? item.cdnUrl : item;
+                                        api.addFileFromCdnUrl(url);
+                                    });
+                                } else {
+                                    const url = typeof files === 'object' ? files.cdnUrl : files;
                                     api.addFileFromCdnUrl(url);
-                                });
-                            } else {
-                                const url = typeof initialState === 'object' ? initialState.cdnUrl : initialState;
-                                api.addFileFromCdnUrl(url);
+                                }
+                                @this.set(statePath, JSON.stringify(files));
+                            } catch (e) {
+                                console.error('Error handling initial state:', e);
                             }
-
-                            @this.set(statePath, JSON.stringify(initialState));
                         }
 
                         // Set up event listeners
                         const handleFileUploadSuccess = (e) => {
                             const fileData = {{ $field->isWithMetadata() ? 'e.detail' : 'e.detail.cdnUrl' }};
                             const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
-                            
                             currentFiles.push(fileData);
                             this.uploadedFiles = JSON.stringify(currentFiles);
-                            
-                            this.$refs.hiddenInput.value = this.uploadedFiles;
-                            this.$refs.hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
-                            
-                            @this.set(statePath, this.uploadedFiles);
+                            this.updateInput();
                         };
 
                         const handleFileUrlChanged = (e) => {
                             const fileDetails = e.detail;
                             if (fileDetails.cdnUrlModifiers && fileDetails.cdnUrlModifiers !== "") {
                                 const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
-                                
-                                const findFile = (files, uuid) => {
-                                    return files.findIndex(file => {
-                                        const fileUrl = typeof file === 'object' ? file.cdnUrl : file;
-                                        return fileUrl.includes(uuid);
-                                    });
-                                };
-                                
-                                const fileIndex = findFile(currentFiles, fileDetails.uuid);
+                                const fileIndex = this.findFileIndex(currentFiles, fileDetails.uuid);
                                 
                                 if (fileIndex > -1) {
                                     currentFiles[fileIndex] = {{ $field->isWithMetadata() ? 'fileDetails' : 'fileDetails.cdnUrl' }};
                                 }
                                 
                                 this.uploadedFiles = JSON.stringify(currentFiles);
-                                
-                                this.$refs.hiddenInput.value = this.uploadedFiles;
-                                this.$refs.hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
-                                
-                                @this.set(statePath, this.uploadedFiles);
+                                this.updateInput();
                             }
                         };
 
                         const handleFileRemoved = (e) => {
                             const fileData = {{ $field->isWithMetadata() ? 'e.detail' : 'e.detail.cdnUrl' }};
                             const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
+                            const index = this.findFileIndex(currentFiles, fileData);
                             
-                            const findFile = (files, fileToRemove) => {
-                                return files.findIndex(file => {
-                                    const fileUrl = typeof file === 'object' ? file.cdnUrl : file;
-                                    const removeUrl = typeof fileToRemove === 'object' ? fileToRemove.cdnUrl : fileToRemove;
-                                    return fileUrl === removeUrl;
-                                });
-                            };
-                            
-                            const index = findFile(currentFiles, fileData);
                             if (index > -1) {
                                 currentFiles.splice(index, 1);
                             }
                             
                             this.uploadedFiles = JSON.stringify(currentFiles);
-                            
-                            this.$refs.hiddenInput.value = this.uploadedFiles;
-                            this.$refs.hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
-                            
-                            @this.set(statePath, this.uploadedFiles);
+                            this.updateInput();
                         };
 
                         // Add event listeners
@@ -379,9 +351,27 @@
                             this.ctx.removeEventListener('file-url-changed', handleFileUrlChanged);
                             this.ctx.removeEventListener('file-removed', handleFileRemoved);
                         };
+
+                        // Initialize sorting functionality
+                        this.initializeSorting();
                     };
 
-                    const initializeSorting = () => {
+                    // Helper methods
+                    this.updateInput = () => {
+                        this.$refs.hiddenInput.value = this.uploadedFiles;
+                        this.$refs.hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
+                        @this.set(statePath, this.uploadedFiles);
+                    };
+
+                    this.findFileIndex = (files, fileIdentifier) => {
+                        return files.findIndex(file => {
+                            const fileUrl = typeof file === 'object' ? file.cdnUrl : file;
+                            const searchUrl = typeof fileIdentifier === 'object' ? fileIdentifier.cdnUrl : fileIdentifier;
+                            return fileUrl.includes(searchUrl);
+                        });
+                    };
+
+                    this.initializeSorting = () => {
                         const container = document.querySelector('.uc-files');
                         if (!container) return;
 
@@ -397,44 +387,26 @@
                                 item.addEventListener('dragstart', (e) => {
                                     e.stopPropagation();
                                     item.classList.add('dragging');
-                                    if (ghostDropArea) {
-                                        ghostDropArea.style.display = 'none';
-                                    }
+                                    if (ghostDropArea) ghostDropArea.style.display = 'none';
                                 });
 
                                 item.addEventListener('dragend', (e) => {
                                     e.stopPropagation();
                                     item.classList.remove('dragging');
-                                    if (ghostDropArea) {
-                                        ghostDropArea.style.display = '';
-                                    }
+                                    if (ghostDropArea) ghostDropArea.style.display = '';
 
-                                    // Get current files from the component state
-                                    let currentFiles = [];
-                                    try {
-                                        currentFiles = JSON.parse(this.uploadedFiles);
-                                        if (!Array.isArray(currentFiles)) {
-                                            currentFiles = [currentFiles];
-                                        }
-                                    } catch (e) {
-                                        console.error('Error parsing current files:', e);
-                                        return;
-                                    }
-
-                                    // Create new order based on DOM
+                                    // Update order after drag
+                                    const currentFiles = JSON.parse(this.uploadedFiles);
                                     const newOrder = [...container.querySelectorAll('uc-file-item')].map(fileItem => {
                                         const uuid = fileItem.getAttribute('data-uuid');
                                         return currentFiles.find(file => {
                                             const fileUrl = typeof file === 'object' ? file.cdnUrl : file;
                                             return fileUrl.includes(uuid);
                                         });
-                                    }).filter(Boolean); // Remove any undefined entries
+                                    }).filter(Boolean);
 
-                                    // Update state
                                     this.uploadedFiles = JSON.stringify(newOrder);
-                                    this.$refs.hiddenInput.value = this.uploadedFiles;
-                                    this.$refs.hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
-                                    @this.set(statePath, this.uploadedFiles);
+                                    this.updateInput();
                                 });
 
                                 item.addEventListener('dragover', (e) => {
@@ -447,8 +419,7 @@
                                     const siblings = [...container.querySelectorAll('uc-file-item:not(.dragging)')];
                                     const nextSibling = siblings.find(sibling => {
                                         const rect = sibling.getBoundingClientRect();
-                                        const midpoint = rect.top + rect.height / 2;
-                                        return e.clientY < midpoint;
+                                        return e.clientY < (rect.top + rect.height / 2);
                                     });
 
                                     if (nextSibling) {
@@ -462,12 +433,8 @@
                     };
 
                     // Watch for changes in the file list
-                    const observer = new MutationObserver((mutations) => {
-                        mutations.forEach(mutation => {
-                            if (mutation.type === 'childList') {
-                                setTimeout(initializeSorting, 100);
-                            }
-                        });
+                    const observer = new MutationObserver(() => {
+                        setTimeout(this.initializeSorting, 100);
                     });
 
                     const container = document.querySelector('.uc-files');
@@ -478,8 +445,8 @@
                         });
                     }
 
-                    // Initialize sorting after a short delay
-                    setTimeout(initializeSorting, 500);
+                    // Start initialization
+                    initializeUploader();
                 }
             };
         }
