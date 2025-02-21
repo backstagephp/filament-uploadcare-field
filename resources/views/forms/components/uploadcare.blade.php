@@ -9,6 +9,7 @@
 
         <uc-config ctx-name="{{ $getStatePath() }}" pubkey="{{ $field->getPublicKey() }}" use-cloud-image-editor="true"
             @if ($field->isMultiple()) multiple @endif
+            @if (! $field->isMultiple()) multiple="false" multiple-min="1" multiple-max="1" @endif
             @if ($field->getMultipleMin() > 0) multiple-min="{{ $field->getMultipleMin() }}" @endif
             @if ($field->getMultipleMax() > 0) multiple-max="{{ $field->getMultipleMax() }}" @endif
             @if ($field->isImagesOnly()) img-only @else accept="{{ $field->getAccept() }}" @endif group-output
