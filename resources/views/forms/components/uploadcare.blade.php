@@ -118,6 +118,35 @@
             --uc-simple-btn-hover-dark: rgb(75 75 75);
             --uc-simple-btn-foreground-dark: rgb(255 255 255);
         }
+
+        /* Add styles for drag handles and sorting */
+        uc-file-item {
+            position: relative;
+            cursor: move;
+        }
+        
+        .uc-drag-handle {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            cursor: move;
+            padding: 4px;
+            border-radius: 4px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            z-index: 10;
+            font-size: 14px;
+            line-height: 1;
+        }
+        
+        uc-file-item.dragging {
+            opacity: 0.5;
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        .uc-files {
+            position: relative;
+        }
     </style>
 
     <script type="module">
@@ -212,11 +241,22 @@
         function uploadcareField() {
             return {
                 uploadedFiles: '',
-                removeEventListeners: null,
-
+                
                 initUploadcare(statePath, initialState) {
                     if (this.removeEventListeners) {
                         this.removeEventListeners();
+                    }
+
+                    // Parse initial state right away
+                    if (initialState) {
+                        try {
+                            this.uploadedFiles = typeof initialState === 'string' ? initialState : JSON.stringify(initialState);
+                        } catch (e) {
+                            console.error('Error parsing initial state:', e);
+                            this.uploadedFiles = '[]';
+                        }
+                    } else {
+                        this.uploadedFiles = '[]';
                     }
 
                     const initializeUploader = () => {
@@ -341,9 +381,106 @@
                         };
                     };
 
-                    // Start initialization
-                    initializeUploader();
-                },
+                    const initializeSorting = () => {
+                        const container = document.querySelector('.uc-files');
+                        if (!container) return;
+
+                        const items = container.querySelectorAll('uc-file-item');
+                        if (!items.length) return;
+
+                        const ghostDropArea = document.querySelector('uc-drop-area[ghost]');
+
+                        items.forEach(item => {
+                            if (!item.getAttribute('draggable')) {
+                                item.setAttribute('draggable', 'true');
+                                
+                                item.addEventListener('dragstart', (e) => {
+                                    e.stopPropagation();
+                                    item.classList.add('dragging');
+                                    if (ghostDropArea) {
+                                        ghostDropArea.style.display = 'none';
+                                    }
+                                });
+
+                                item.addEventListener('dragend', (e) => {
+                                    e.stopPropagation();
+                                    item.classList.remove('dragging');
+                                    if (ghostDropArea) {
+                                        ghostDropArea.style.display = '';
+                                    }
+
+                                    // Get current files from the component state
+                                    let currentFiles = [];
+                                    try {
+                                        currentFiles = JSON.parse(this.uploadedFiles);
+                                        if (!Array.isArray(currentFiles)) {
+                                            currentFiles = [currentFiles];
+                                        }
+                                    } catch (e) {
+                                        console.error('Error parsing current files:', e);
+                                        return;
+                                    }
+
+                                    // Create new order based on DOM
+                                    const newOrder = [...container.querySelectorAll('uc-file-item')].map(fileItem => {
+                                        const uuid = fileItem.getAttribute('data-uuid');
+                                        return currentFiles.find(file => {
+                                            const fileUrl = typeof file === 'object' ? file.cdnUrl : file;
+                                            return fileUrl.includes(uuid);
+                                        });
+                                    }).filter(Boolean); // Remove any undefined entries
+
+                                    // Update state
+                                    this.uploadedFiles = JSON.stringify(newOrder);
+                                    this.$refs.hiddenInput.value = this.uploadedFiles;
+                                    this.$refs.hiddenInput.dispatchEvent(new Event('input', { bubbles: true }));
+                                    @this.set(statePath, this.uploadedFiles);
+                                });
+
+                                item.addEventListener('dragover', (e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    
+                                    const draggingItem = container.querySelector('.dragging');
+                                    if (!draggingItem || draggingItem === item) return;
+
+                                    const siblings = [...container.querySelectorAll('uc-file-item:not(.dragging)')];
+                                    const nextSibling = siblings.find(sibling => {
+                                        const rect = sibling.getBoundingClientRect();
+                                        const midpoint = rect.top + rect.height / 2;
+                                        return e.clientY < midpoint;
+                                    });
+
+                                    if (nextSibling) {
+                                        container.insertBefore(draggingItem, nextSibling);
+                                    } else {
+                                        container.appendChild(draggingItem);
+                                    }
+                                });
+                            }
+                        });
+                    };
+
+                    // Watch for changes in the file list
+                    const observer = new MutationObserver((mutations) => {
+                        mutations.forEach(mutation => {
+                            if (mutation.type === 'childList') {
+                                setTimeout(initializeSorting, 100);
+                            }
+                        });
+                    });
+
+                    const container = document.querySelector('.uc-files');
+                    if (container) {
+                        observer.observe(container, {
+                            childList: true,
+                            subtree: true
+                        });
+                    }
+
+                    // Initialize sorting after a short delay
+                    setTimeout(initializeSorting, 500);
+                }
             };
         }
     </script>
