@@ -241,6 +241,18 @@
                             return;
                         }
 
+                        // TODO: Temporary hardcoded fix: remove the required attribute from any input within uc-form-input
+                        const required = '{{ $field->isRequired() }}';
+
+                        if (!required) {
+                            setTimeout(() => {
+                                const inputs = document.querySelectorAll('uc-form-input input[required]');
+                                inputs.forEach(input => {
+                                    input.removeAttribute('required');
+                                });
+                            }, 100);
+                        }
+                        
                         // Rest of your initialization code...
                         if (initialState) {
                             try {
