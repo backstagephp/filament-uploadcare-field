@@ -86,7 +86,7 @@ class UploadcareServiceProvider extends PackageServiceProvider
         Testable::mixin(new TestsUploadcare);
 
         FilamentView::registerRenderHook(PanelsRenderHook::HEAD_END, function () {
-            return <<<HTML
+            return <<<'HTML'
                     <script type="module">
                     import * as UC from "https://cdn.jsdelivr.net/npm/@uploadcare/file-uploader@v1/web/uc-file-uploader-inline.min.js";
                         UC.defineComponents(UC);
