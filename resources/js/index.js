@@ -1,6 +1,6 @@
   if (typeof themeHandler === 'undefined') {
     const themeHandler = () => {
-        const uploaders = document.querySelectorAll('uc-file-uploader-inline }}');
+        const uploaders = document.querySelectorAll('uc-file-uploader-inline');
         if (!uploaders.length || !localStorage.getItem('theme')) return;
 
         const userTheme = localStorage.getItem('theme');
