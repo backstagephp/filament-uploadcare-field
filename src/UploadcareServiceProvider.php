@@ -2,6 +2,7 @@
 
 namespace Vormkracht10\Uploadcare;
 
+use Filament\Support\Assets\AlpineComponent;
 use Filament\Support\Assets\Asset;
 use Filament\Support\Assets\Css;
 use Filament\Support\Assets\Js;
@@ -152,7 +153,7 @@ class UploadcareServiceProvider extends PackageServiceProvider
     protected function getAssets(): array
     {
         return [
-            // AlpineComponent::make('filament-uploadcare-field', __DIR__ . '/../resources/dist/components/filament-uploadcare-field.js'),
+            AlpineComponent::make('uploadcare', __DIR__ . '/../resources/js/components/uploadcare.js'),
             Css::make('filament-uploadcare-field-styles', __DIR__ . '/../resources/dist/filament-uploadcare-field.css'),
             Js::make('filament-uploadcare-field-scripts', __DIR__ . '/../resources/dist/filament-uploadcare-field.js'),
         ];

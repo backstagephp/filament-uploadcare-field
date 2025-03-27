@@ -13,51 +13,12 @@ export default function uploadcareField(config) {
         uploaderStyle: config.uploaderStyle,
         uploadedFiles: '',
         ctx: null,
-        removeEventListeners: null,
 
         init() {
-            // Apply theme handler
-            this.applyTheme();
-            
-            // Initialize uploadcare
             this.initUploadcare();
-            
-            // Set up observers for theme changes
-            this.setupThemeObservers();
         },
 
-        applyTheme() {
-            const userTheme = localStorage.getItem('theme');
-            const theme = userTheme === 'system' ?
-                (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') :
-                userTheme;
-
-            const uploaders = document.querySelectorAll('uc-file-uploader-inline');
-            uploaders.forEach(uploader => uploader.classList.add(`uc-${theme}`));
-        },
-        
-        setupThemeObservers() {
-            // Check for theme changes
-            window.addEventListener('storage', (event) => {
-                if (event.key === 'theme') {
-                    this.applyTheme();
-                }
-            });
-            
-            // Also watch for media query changes if using system theme
-            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-            mediaQuery.addEventListener('change', () => {
-                if (localStorage.getItem('theme') === 'system') {
-                    this.applyTheme();
-                }
-            });
-        },
-        
         initUploadcare() {
-            if (this.removeEventListeners) {
-                this.removeEventListeners();
-            }
-
             const initializeUploader = () => {
                 this.ctx = document.querySelector(`uc-upload-ctx-provider[ctx-name="${this.statePath}"]`);
 
@@ -66,7 +27,7 @@ export default function uploadcareField(config) {
                 try {
                     api = this.ctx?.getAPI();
 
-                    // Test if the API is actually ready by trying to access a known method
+                    // Test if the API is actually ready
                     if (!api || !api.addFileFromCdnUrl) {
                         setTimeout(initializeUploader, 100);
                         return;
@@ -80,14 +41,6 @@ export default function uploadcareField(config) {
                     return;
                 }
 
-                // Remove required attribute from any input within uc-form-input
-                setTimeout(() => {
-                    const inputs = document.querySelectorAll('uc-form-input input[required]');
-                    inputs.forEach(input => {
-                        input.removeAttribute('required');
-                    });
-                }, 100);
-                
                 // Initialize with existing state if available
                 if (this.initialState) {
                     try {
@@ -111,7 +64,7 @@ export default function uploadcareField(config) {
                 }
 
                 // Set up event listeners
-                const handleFileUploadSuccess = (e) => {
+                this.ctx.addEventListener('file-upload-success', (e) => {
                     const fileData = e.detail.cdnUrl;
                     const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
                     
@@ -119,9 +72,9 @@ export default function uploadcareField(config) {
                     this.uploadedFiles = JSON.stringify(currentFiles);
                     
                     this.state = this.uploadedFiles;
-                };
+                });
 
-                const handleFileUrlChanged = (e) => {
+                this.ctx.addEventListener('file-url-changed', (e) => {
                     const fileDetails = e.detail;
                     if (fileDetails.cdnUrlModifiers && fileDetails.cdnUrlModifiers !== "") {
                         const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
@@ -142,9 +95,9 @@ export default function uploadcareField(config) {
                         this.uploadedFiles = JSON.stringify(currentFiles);
                         this.state = this.uploadedFiles;
                     }
-                };
+                });
 
-                const handleFileRemoved = (e) => {
+                this.ctx.addEventListener('file-removed', (e) => {
                     const fileData = e.detail.cdnUrl;
                     const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
                     
@@ -163,23 +116,11 @@ export default function uploadcareField(config) {
                     
                     this.uploadedFiles = JSON.stringify(currentFiles);
                     this.state = this.uploadedFiles;
-                };
-
-                // Add event listeners
-                this.ctx.addEventListener('file-upload-success', handleFileUploadSuccess);
-                this.ctx.addEventListener('file-url-changed', handleFileUrlChanged);
-                this.ctx.addEventListener('file-removed', handleFileRemoved);
-
-                // Store cleanup function
-                this.removeEventListeners = () => {
-                    this.ctx.removeEventListener('file-upload-success', handleFileUploadSuccess);
-                    this.ctx.removeEventListener('file-url-changed', handleFileUrlChanged);
-                    this.ctx.removeEventListener('file-removed', handleFileRemoved);
-                };
+                });
             };
 
             // Start initialization
             initializeUploader();
         }
     };
-}
+} 
