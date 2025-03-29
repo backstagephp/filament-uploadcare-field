@@ -15,7 +15,7 @@
             x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('uploadcare', 'vormkracht10/filament-uploadcare-field') }}"
             class="relative z-0 rounded-md bg-white dark:bg-gray-900 focus-within:ring focus-within:ring-primary-500 focus-within:z-10"
             x-data="uploadcareField({
-                state: $wire.{{ $applyStateBindingModifiers("\$entangle('{$statePath}')", isOptimisticallyLive: true) }},
+                {{-- state: $wire.{{ $applyStateBindingModifiers("\$entangle('{$statePath}')", isOptimisticallyLive: true) }}, --}}
                 statePath: '{{ $getStatePath() }}',
                 initialState: @js($field->getState()),
                 publicKey: '{{ $field->getPublicKey() }}',

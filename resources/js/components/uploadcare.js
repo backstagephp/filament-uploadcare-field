@@ -1,6 +1,6 @@
 export default function uploadcareField(config) {
     return {
-        state: config.state,
+        // state: config.state,
         statePath: config.statePath,
         initialState: config.initialState,
         publicKey: config.publicKey,
