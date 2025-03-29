@@ -11,7 +11,7 @@
         @endphp
 
         <div class="uploadcare-wrapper {{ $initialClass }}">
-        {{-- @dump($field->getState()) --}}
+        {{-- @dump($field->getState(), $field->getStatePath(), $field) --}}
             <div
                 wire:ignore
                 x-load
@@ -21,7 +21,7 @@
                     {{-- state: $wire.{{ $applyStateBindingModifiers("\$entangle('{$statePath}')", isOptimisticallyLive: true) }}, --}}
                     state: @js($field->getState()),
                     statePath: '{{ $getStatePath() }}',
-                    {{-- initialState: null, --}}
+                    uniqueContextName: '{{ $uniqueContextName }}',
                     initialState: @js($field->getState()),
                     publicKey: '{{ $field->getPublicKey() }}',
                     isMultiple: @js($field->isMultiple()),

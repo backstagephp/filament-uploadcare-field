@@ -14,6 +14,7 @@ export default function uploadcareField(config) {
         uploadedFiles: '',
         ctx: null,
         removeEventListeners: null,
+        uniqueContextName: config.uniqueContextName,
 
         init() {
             // Apply theme handler
@@ -58,9 +59,15 @@ export default function uploadcareField(config) {
                 this.removeEventListeners();
             }
 
-            const initializeUploader = () => {
-                this.ctx = document.querySelector(`uc-upload-ctx-provider[ctx-name="${this.statePath}"]`);
+            const initializeUploader = (retryCount = 0, maxRetries = 10) => {
+                if (retryCount >= maxRetries) {
+                    console.error('Failed to initialize Uploadcare after maximum retries');
+                    return;
+                }
 
+                this.ctx = document.querySelector(`uc-upload-ctx-provider[ctx-name="${this.uniqueContextName}"]`);
+
+                console.log('initializeUploader');
                 // Try to get the API
                 let api;
                 try {
@@ -68,11 +75,11 @@ export default function uploadcareField(config) {
 
                     // Test if the API is actually ready by trying to access a known method
                     if (!api || !api.addFileFromCdnUrl) {
-                        setTimeout(initializeUploader, 100);
+                        setTimeout(() => initializeUploader(retryCount + 1, maxRetries), 100);
                         return;
                     }
                 } catch (e) {
-                    setTimeout(initializeUploader, 100);
+                    setTimeout(() => initializeUploader(retryCount + 1, maxRetries), 100);
                     return;
                 }
 
@@ -89,17 +96,30 @@ export default function uploadcareField(config) {
                 }, 100);
                 
                 // Initialize with existing state if available
+                console.log('initialState', this.initialState);
                 if (this.initialState) {
                     try {
                         const parsedState = typeof this.initialState === 'string' ? 
                             JSON.parse(this.initialState) : this.initialState;
                         
+                        console.log('parsedState', parsedState);
                         if (Array.isArray(parsedState)) {
-                            parsedState.forEach(item => {
+                            if (parsedState.length === 1) {
+                                console.log('single item 1');
+                                // Handle single-item array like a single item (because of the 'too many files' error)
+                                const item = parsedState[0];
                                 const url = typeof item === 'object' ? item.cdnUrl : item;
                                 api.addFileFromCdnUrl(url);
-                            });
+                            } else {
+                                console.log('multiple items');
+                                // Handle multiple items as before
+                                parsedState.forEach(item => {
+                                    const url = typeof item === 'object' ? item.cdnUrl : item;
+                                    api.addFileFromCdnUrl(url);
+                                });
+                            }
                         } else {
+                            console.log('single item 2');
                             const url = typeof parsedState === 'object' ? parsedState.cdnUrl : parsedState;
                             api.addFileFromCdnUrl(url);
                         }
@@ -116,9 +136,7 @@ export default function uploadcareField(config) {
                     const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
                     
                     currentFiles.push(fileData);
-                    this.uploadedFiles = JSON.stringify(currentFiles);
-                    
-                    this.state = this.uploadedFiles;
+                    this.state = JSON.stringify(currentFiles);
                 };
 
                 const handleFileUrlChanged = (e) => {
@@ -139,8 +157,7 @@ export default function uploadcareField(config) {
                             currentFiles[fileIndex] = fileDetails.cdnUrl;
                         }
                         
-                        this.uploadedFiles = JSON.stringify(currentFiles);
-                        this.state = this.uploadedFiles;
+                        this.state = JSON.stringify(currentFiles);
                     }
                 };
 
@@ -161,8 +178,7 @@ export default function uploadcareField(config) {
                         currentFiles.splice(index, 1);
                     }
                     
-                    this.uploadedFiles = JSON.stringify(currentFiles);
-                    this.state = this.uploadedFiles;
+                    this.state = JSON.stringify(currentFiles);
                 };
 
                 // Add event listeners
