@@ -155,7 +155,8 @@ class UploadcareServiceProvider extends PackageServiceProvider
         return [
             AlpineComponent::make('uploadcare', __DIR__ . '/../resources/js/components/uploadcare.js'),
             Css::make('filament-uploadcare-field-styles', __DIR__ . '/../resources/dist/filament-uploadcare-field.css'),
-            Js::make('filament-uploadcare-field-scripts', __DIR__ . '/../resources/dist/filament-uploadcare-field.js'),
+            Js::make('filament-uploadcare-field-scripts', __DIR__ . '/../resources/dist/filament-uploadcare-field.js')
+                ->module(),
         ];
     }
 
