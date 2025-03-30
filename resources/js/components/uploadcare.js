@@ -23,9 +23,7 @@ export default function uploadcareField(config) {
         uniqueContextName: config.uniqueContextName,
         isInitialized: false,
 
-        init() {
-            console.log('Alpine init called for context:', this.uniqueContextName);
-            
+        init() {            
             // Check if this context was already initialized
             if (window._initializedUploadcareContexts.has(this.uniqueContextName)) {
                 console.log('Context already initialized, skipping..');
@@ -127,7 +125,7 @@ export default function uploadcareField(config) {
                 }, 100);
                 
                 // Initialize with existing state if available
-                console.log('initialState', this.initialState);
+                // console.log('initialState', this.initialState);
                 if (this.initialState) {
                     try {
                         const parsedState = typeof this.initialState === 'string' ? 
@@ -135,20 +133,22 @@ export default function uploadcareField(config) {
                         
                         console.log('parsedState', parsedState);
                         if (Array.isArray(parsedState)) {
-                            if (parsedState.length === 1) {
-                                // Handle single-item array like a single item (because of the 'too many files' error)
-                                const item = parsedState[0];
-                                const url = typeof item === 'object' ? item.cdnUrl : item;
-                                api.addFileFromCdnUrl(url);
-                            } else {
+                            // if (parsedState.length === 1) {
+                            //     // Handle single-item array like a single item (because of the 'too many files' error)
+                            //     const item = parsedState[0];
+                            //     const url = typeof item === 'object' ? item.cdnUrl : item;
+                            //     api.addFileFromCdnUrl(url);
+                            // } else {
                                 // Handle multiple items as before
                                 parsedState.forEach(item => {
                                     const url = typeof item === 'object' ? item.cdnUrl : item;
+                                    console.log('url', url);
                                     api.addFileFromCdnUrl(url);
                                 });
-                            }
+                            // }
                         } else {
                             const url = typeof parsedState === 'object' ? parsedState.cdnUrl : parsedState;
+                            console.log('url', url);
                             api.addFileFromCdnUrl(url);
                         }
 
