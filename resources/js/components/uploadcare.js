@@ -1,4 +1,5 @@
 export default function uploadcareField(config) {
+    console.group('uploadcareField');
     console.log('uploadcareField function called');
     
     // Create a static Set to track initialized contexts
@@ -233,4 +234,6 @@ export default function uploadcareField(config) {
             initializeUploader();
         }
     };
+
+    console.groupEnd();
 }
