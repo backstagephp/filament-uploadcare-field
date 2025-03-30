@@ -1,4 +1,11 @@
 export default function uploadcareField(config) {
+    console.log('uploadcareField function called');
+    
+    // Create a static Set to track initialized contexts
+    if (!window._initializedUploadcareContexts) {
+        window._initializedUploadcareContexts = new Set();
+    }
+
     return {
         state: config.state,
         statePath: config.statePath,
@@ -15,8 +22,20 @@ export default function uploadcareField(config) {
         ctx: null,
         removeEventListeners: null,
         uniqueContextName: config.uniqueContextName,
+        isInitialized: false,
 
         init() {
+            console.log('Alpine init called for context:', this.uniqueContextName);
+            
+            // Check if this context was already initialized
+            if (window._initializedUploadcareContexts.has(this.uniqueContextName)) {
+                console.log('Context already initialized, skipping:', this.uniqueContextName);
+                return;
+            }
+
+            // Mark this context as initialized
+            window._initializedUploadcareContexts.add(this.uniqueContextName);
+
             // Apply theme handler
             this.applyTheme();
             
@@ -55,11 +74,13 @@ export default function uploadcareField(config) {
         },
         
         initUploadcare() {
+            console.log('initUploadcare called');
             if (this.removeEventListeners) {
                 this.removeEventListeners();
             }
 
             const initializeUploader = (retryCount = 0, maxRetries = 10) => {
+                console.log(`Attempt ${retryCount + 1} of ${maxRetries}`);
                 if (retryCount >= maxRetries) {
                     console.error('Failed to initialize Uploadcare after maximum retries');
                     return;
@@ -67,13 +88,24 @@ export default function uploadcareField(config) {
 
                 this.ctx = document.querySelector(`uc-upload-ctx-provider[ctx-name="${this.uniqueContextName}"]`);
 
+                // Check if this context already has files initialized
+                try {
+                    const existingApi = this.ctx?.getAPI();
+                    if (existingApi?.getFiles()?.length > 0) {
+                        console.log('Files already initialized for this context, skipping...');
+                        return;
+                    }
+                } catch (e) {
+                    // If we can't access the API yet, continue with initialization
+                }
+
                 console.log('initializeUploader');
                 // Try to get the API
                 let api;
                 try {
                     api = this.ctx?.getAPI();
 
-                    // Test if the API is actually ready by trying to access a known method
+                    // Test if the API is actually ready
                     if (!api || !api.addFileFromCdnUrl) {
                         setTimeout(() => initializeUploader(retryCount + 1, maxRetries), 100);
                         return;
@@ -86,6 +118,9 @@ export default function uploadcareField(config) {
                 if (!this.ctx || !api) {
                     return;
                 }
+
+                // Mark as initialized before proceeding
+                this.isInitialized = true;
 
                 // Remove required attribute from any input within uc-form-input
                 setTimeout(() => {
