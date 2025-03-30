@@ -1,6 +1,4 @@
 export default function uploadcareField(config) {
-    console.group('uploadcareField');
-    console.log('uploadcareField function called');
     
     // Create a static Set to track initialized contexts
     if (!window._initializedUploadcareContexts) {
@@ -30,7 +28,7 @@ export default function uploadcareField(config) {
             
             // Check if this context was already initialized
             if (window._initializedUploadcareContexts.has(this.uniqueContextName)) {
-                console.log('Context already initialized, skipping:', this.uniqueContextName);
+                console.log('Context already initialized, skipping..');
                 return;
             }
 
@@ -75,13 +73,11 @@ export default function uploadcareField(config) {
         },
         
         initUploadcare() {
-            console.log('initUploadcare called');
             if (this.removeEventListeners) {
                 this.removeEventListeners();
             }
 
             const initializeUploader = (retryCount = 0, maxRetries = 10) => {
-                console.log(`Attempt ${retryCount + 1} of ${maxRetries}`);
                 if (retryCount >= maxRetries) {
                     console.error('Failed to initialize Uploadcare after maximum retries');
                     return;
@@ -100,7 +96,6 @@ export default function uploadcareField(config) {
                     // If we can't access the API yet, continue with initialization
                 }
 
-                console.log('initializeUploader');
                 // Try to get the API
                 let api;
                 try {
@@ -141,13 +136,11 @@ export default function uploadcareField(config) {
                         console.log('parsedState', parsedState);
                         if (Array.isArray(parsedState)) {
                             if (parsedState.length === 1) {
-                                console.log('single item 1');
                                 // Handle single-item array like a single item (because of the 'too many files' error)
                                 const item = parsedState[0];
                                 const url = typeof item === 'object' ? item.cdnUrl : item;
                                 api.addFileFromCdnUrl(url);
                             } else {
-                                console.log('multiple items');
                                 // Handle multiple items as before
                                 parsedState.forEach(item => {
                                     const url = typeof item === 'object' ? item.cdnUrl : item;
@@ -155,7 +148,6 @@ export default function uploadcareField(config) {
                                 });
                             }
                         } else {
-                            console.log('single item 2');
                             const url = typeof parsedState === 'object' ? parsedState.cdnUrl : parsedState;
                             api.addFileFromCdnUrl(url);
                         }
@@ -234,6 +226,4 @@ export default function uploadcareField(config) {
             initializeUploader();
         }
     };
-
-    console.groupEnd();
 }
