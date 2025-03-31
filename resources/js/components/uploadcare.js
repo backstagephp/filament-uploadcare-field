@@ -1,6 +1,5 @@
 export default function uploadcareField(config) {
     
-    // Create a static Set to track initialized contexts
     if (!window._initializedUploadcareContexts) {
         window._initializedUploadcareContexts = new Set();
     }
