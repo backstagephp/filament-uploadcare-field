@@ -83,17 +83,6 @@ export default function uploadcareField(config) {
 
                 this.ctx = document.querySelector(`uc-upload-ctx-provider[ctx-name="${this.uniqueContextName}"]`);
 
-                // Check if this context already has files initialized
-                try {
-                    const existingApi = this.ctx?.getAPI();
-                    if (existingApi?.getFiles()?.length > 0) {
-                        console.log('Files already initialized for this context, skipping...');
-                        return;
-                    }
-                } catch (e) {
-                    // If we can't access the API yet, continue with initialization
-                }
-
                 // Try to get the API
                 let api;
                 try {
@@ -118,7 +107,7 @@ export default function uploadcareField(config) {
 
                 // Remove required attribute from any input within uc-form-input
                 setTimeout(() => {
-                    const inputs = document.querySelectorAll('uc-form-input input[required]');
+                    const inputs = document.querySelectorAll(`uc-form-input[ctx-name="${this.uniqueContextName}"] input[required]`);
                     inputs.forEach(input => {
                         input.removeAttribute('required');
                     });
@@ -130,12 +119,15 @@ export default function uploadcareField(config) {
                         const parsedState = typeof this.initialState === 'string' ? 
                             JSON.parse(this.initialState) : this.initialState;
                         
+                        // Clear any existing files in this context
+                        api.clear();
+                        
                         if (Array.isArray(parsedState)) {
                             parsedState.forEach(item => {
                                 const url = typeof item === 'object' ? item.cdnUrl : item;
                                 api.addFileFromCdnUrl(url);
                             });
-                        } else {
+                        } else if (parsedState) {
                             const url = typeof parsedState === 'object' ? parsedState.cdnUrl : parsedState;
                             api.addFileFromCdnUrl(url);
                         }
@@ -151,8 +143,14 @@ export default function uploadcareField(config) {
                     const fileData = this.isWithMetadata ? e.detail : e.detail.cdnUrl;
                     const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
                     
-                    currentFiles.push(fileData);
+                    if (this.isMultiple) {
+                        currentFiles.push(fileData);
+                    } else {
+                        currentFiles[0] = fileData;
+                    }
+                    
                     this.state = JSON.stringify(currentFiles);
+                    this.uploadedFiles = JSON.stringify(currentFiles);
                 };
 
                 const handleFileUrlChanged = (e) => {
@@ -171,9 +169,9 @@ export default function uploadcareField(config) {
                         
                         if (fileIndex > -1) {
                             currentFiles[fileIndex] = this.isWithMetadata ? fileDetails : fileDetails.cdnUrl;
+                            this.state = JSON.stringify(currentFiles);
+                            this.uploadedFiles = JSON.stringify(currentFiles);
                         }
-                        
-                        this.state = JSON.stringify(currentFiles);
                     }
                 };
 
@@ -192,9 +190,9 @@ export default function uploadcareField(config) {
                     const index = findFile(currentFiles, fileData);
                     if (index > -1) {
                         currentFiles.splice(index, 1);
+                        this.state = JSON.stringify(currentFiles);
+                        this.uploadedFiles = JSON.stringify(currentFiles);
                     }
-                    
-                    this.state = JSON.stringify(currentFiles);
                 };
 
                 // Add event listeners
