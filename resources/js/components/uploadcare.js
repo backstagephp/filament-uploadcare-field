@@ -16,6 +16,7 @@ export default function uploadcareField(config) {
         accept: config.accept,
         sourceList: config.sourceList,
         uploaderStyle: config.uploaderStyle,
+        isWithMetadata: config.isWithMetadata,
         uploadedFiles: '',
         ctx: null,
         removeEventListeners: null,
@@ -124,30 +125,18 @@ export default function uploadcareField(config) {
                 }, 100);
                 
                 // Initialize with existing state if available
-                // console.log('initialState', this.initialState);
                 if (this.initialState) {
                     try {
                         const parsedState = typeof this.initialState === 'string' ? 
                             JSON.parse(this.initialState) : this.initialState;
                         
-                        console.log('parsedState', parsedState);
                         if (Array.isArray(parsedState)) {
-                            // if (parsedState.length === 1) {
-                            //     // Handle single-item array like a single item (because of the 'too many files' error)
-                            //     const item = parsedState[0];
-                            //     const url = typeof item === 'object' ? item.cdnUrl : item;
-                            //     api.addFileFromCdnUrl(url);
-                            // } else {
-                                // Handle multiple items as before
-                                parsedState.forEach(item => {
-                                    const url = typeof item === 'object' ? item.cdnUrl : item;
-                                    console.log('url', url);
-                                    api.addFileFromCdnUrl(url);
-                                });
-                            // }
+                            parsedState.forEach(item => {
+                                const url = typeof item === 'object' ? item.cdnUrl : item;
+                                api.addFileFromCdnUrl(url);
+                            });
                         } else {
                             const url = typeof parsedState === 'object' ? parsedState.cdnUrl : parsedState;
-                            console.log('url', url);
                             api.addFileFromCdnUrl(url);
                         }
 
@@ -159,7 +148,7 @@ export default function uploadcareField(config) {
 
                 // Set up event listeners
                 const handleFileUploadSuccess = (e) => {
-                    const fileData = e.detail.cdnUrl;
+                    const fileData = this.isWithMetadata ? e.detail : e.detail.cdnUrl;
                     const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
                     
                     currentFiles.push(fileData);
@@ -181,7 +170,7 @@ export default function uploadcareField(config) {
                         const fileIndex = findFile(currentFiles, fileDetails.uuid);
                         
                         if (fileIndex > -1) {
-                            currentFiles[fileIndex] = fileDetails.cdnUrl;
+                            currentFiles[fileIndex] = this.isWithMetadata ? fileDetails : fileDetails.cdnUrl;
                         }
                         
                         this.state = JSON.stringify(currentFiles);
@@ -189,7 +178,7 @@ export default function uploadcareField(config) {
                 };
 
                 const handleFileRemoved = (e) => {
-                    const fileData = e.detail.cdnUrl;
+                    const fileData = this.isWithMetadata ? e.detail : e.detail.cdnUrl;
                     const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
                     
                     const findFile = (files, fileToRemove) => {

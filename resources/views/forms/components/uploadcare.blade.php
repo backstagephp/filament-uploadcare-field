@@ -26,6 +26,7 @@
                     multipleMin: {{ $field->getMultipleMin() ?: 0 }},
                     multipleMax: {{ $field->getMultipleMax() ?: 0 }},
                     isImagesOnly: @js($field->isImagesOnly()),
+                    isWithMetadata: @js($field->isWithMetadata()),
                     accept: '{{ $field->getAccept() }}',
                     sourceList: '{{ $field->getSourceList() }}',
                     uploaderStyle: '{{ $field->getUploaderStyle() }}'
