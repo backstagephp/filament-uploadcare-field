@@ -1,5 +1,9 @@
 export default function uploadcareField(config) {
     
+    if (!window._initializedUploadcareContexts) {
+        window._initializedUploadcareContexts = new Set();
+    }
+    
     return {
         state: config.state,
         statePath: config.statePath,
@@ -20,8 +24,18 @@ export default function uploadcareField(config) {
         isInitialized: false,
         stateHasBeenInitialized: false,
         isStateWatcherActive: false,
+        isLocalUpdate: false,
 
         init() {            
+            // Check if this context was already initialized
+            if (window._initializedUploadcareContexts.has(this.uniqueContextName)) {
+                console.log('Context already initialized, skipping..');
+                return;
+            }
+
+            // Mark this context as initialized
+            window._initializedUploadcareContexts.add(this.uniqueContextName);
+
             // Apply theme handler
             this.applyTheme();
             
@@ -103,70 +117,77 @@ export default function uploadcareField(config) {
                 }, 100);
                 
                 // Initialize with existing state if available
-                if (this.initialState && !this.stateHasBeenInitialized) {
-                    try {
-                        const parsedState = typeof this.initialState === 'string' ? 
-                            JSON.parse(this.initialState) : this.initialState;
-                        
-                        if (Array.isArray(parsedState)) {
-                            parsedState.forEach(item => {
-                                const url = typeof item === 'object' ? item.cdnUrl : item;
-                                api.addFileFromCdnUrl(url);
-                            });
-                        } else if (parsedState) {
-                            const url = typeof parsedState === 'object' ? parsedState.cdnUrl : parsedState;
-                            if (url) api.addFileFromCdnUrl(url);
-                        }
-
-                        this.uploadedFiles = this.initialState && typeof this.initialState === 'string' ? 
-                            this.initialState : JSON.stringify(parsedState);
-                        this.stateHasBeenInitialized = true;
-                    } catch (e) {
-                        console.error('Error parsing initialState:', e);
-                    }
-                }
-
-                // Setup watch for state only after initialization is complete
-                if (!this.isStateWatcherActive) {
-                    this.$watch('state', (newValue, oldValue) => {
-                        // Don't do anything if values are the same or watcher is triggering on init
-                        if (newValue === oldValue || (oldValue === undefined && this.initialState)) {
-                            return;
-                        }
-                        
-                        // Ignore when the state change is from this component
-                        if (newValue === this.uploadedFiles) {
-                            return;
-                        }
-                        
-                        // Only update when we have a value change that's different from our current state
+                this.$nextTick(() => {
+                    if (this.initialState && !this.stateHasBeenInitialized) {
                         try {
-                            // We don't sync anything from external state changes after initial load
-                            // This prevents cross-field contamination
-                            console.log('External state change detected, but ignoring to prevent cross-field contamination');
+                            const parsedState = typeof this.initialState === 'string' ? 
+                                JSON.parse(this.initialState) : this.initialState;
+                            
+                            if (Array.isArray(parsedState)) {
+                                parsedState.forEach(item => {
+                                    if (item) {
+                                        const url = typeof item === 'object' ? item.cdnUrl : item;
+                                        api.addFileFromCdnUrl(url);
+                                    }
+                                });
+                            } else if (parsedState) {
+                                const url = typeof parsedState === 'object' ? parsedState.cdnUrl : parsedState;
+                                if (url) {
+                                    api.addFileFromCdnUrl(url);
+                                }
+                            }
+
+                            this.uploadedFiles = typeof this.initialState === 'string' ? 
+                                this.initialState : JSON.stringify(parsedState);
+                            this.stateHasBeenInitialized = true;
                         } catch (e) {
-                            console.error('Error in state watcher:', e);
+                            console.error('Error parsing initialState:', e);
+                        }
+                    }
+                    
+                    // Set up the state watcher after initial state is loaded
+                    this.$watch('state', (newValue) => {
+                        if (this.isLocalUpdate) {
+                            this.isLocalUpdate = false;
+                            return;
+                        }
+                        
+                        if (!this.stateHasBeenInitialized) {
+                            this.stateHasBeenInitialized = true;
+                            return;
+                        }
+                        
+                        // If this is an external update (not from this field), ignore it
+                        if (newValue !== this.uploadedFiles) {
+                            console.log('External state change detected, ignoring to prevent cross-field contamination');
                         }
                     });
-                    
-                    this.isStateWatcherActive = true;
-                }
+                });
 
                 // Set up event listeners
                 const handleFileUploadSuccess = (e) => {
                     const fileData = this.isWithMetadata ? e.detail : e.detail.cdnUrl;
-                    
                     try {
-                        const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
+                        let currentFiles = [];
+                        
+                        try {
+                            currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
+                            if (!Array.isArray(currentFiles)) {
+                                currentFiles = [];
+                            }
+                        } catch (parseError) {
+                            currentFiles = [];
+                        }
                         
                         // Add the new file data to the collection
                         if (this.isMultiple) {
                             currentFiles.push(fileData);
-                            this.uploadedFiles = JSON.stringify(currentFiles);
                         } else {
-                            this.uploadedFiles = JSON.stringify([fileData]);
+                            currentFiles = [fileData];
                         }
                         
+                        this.uploadedFiles = JSON.stringify(currentFiles);
+                        this.isLocalUpdate = true;
                         this.state = this.uploadedFiles;
                     } catch (error) {
                         console.error('Error updating state after upload:', error);
@@ -177,13 +198,22 @@ export default function uploadcareField(config) {
                     const fileDetails = e.detail;
                     if (fileDetails.cdnUrlModifiers && fileDetails.cdnUrlModifiers !== "") {
                         try {
-                            const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
+                            let currentFiles = [];
+                            
+                            try {
+                                currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
+                                if (!Array.isArray(currentFiles)) {
+                                    currentFiles = [];
+                                }
+                            } catch (parseError) {
+                                currentFiles = [];
+                            }
                             
                             // Find and update the file with the matching UUID
                             const findFile = (files, uuid) => {
                                 return files.findIndex(file => {
                                     const fileUrl = typeof file === 'object' ? file.cdnUrl : file;
-                                    return fileUrl.includes(uuid);
+                                    return fileUrl && fileUrl.includes(uuid);
                                 });
                             };
                             
@@ -192,11 +222,12 @@ export default function uploadcareField(config) {
                             if (fileIndex > -1) {
                                 if (this.isMultiple) {
                                     currentFiles[fileIndex] = this.isWithMetadata ? fileDetails : fileDetails.cdnUrl;
-                                    this.uploadedFiles = JSON.stringify(currentFiles);
                                 } else {
-                                    this.uploadedFiles = JSON.stringify([this.isWithMetadata ? fileDetails : fileDetails.cdnUrl]);
+                                    currentFiles = [this.isWithMetadata ? fileDetails : fileDetails.cdnUrl];
                                 }
                                 
+                                this.uploadedFiles = JSON.stringify(currentFiles);
+                                this.isLocalUpdate = true;
                                 this.state = this.uploadedFiles;
                             }
                         } catch (error) {
@@ -208,7 +239,16 @@ export default function uploadcareField(config) {
                 const handleFileRemoved = (e) => {
                     try {
                         const removedFile = e.detail;
-                        const currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
+                        let currentFiles = [];
+                        
+                        try {
+                            currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
+                            if (!Array.isArray(currentFiles)) {
+                                currentFiles = [];
+                            }
+                        } catch (parseError) {
+                            currentFiles = [];
+                        }
                         
                         // Find and remove the file that was deleted
                         const findFile = (files, fileToRemove) => {
@@ -223,11 +263,12 @@ export default function uploadcareField(config) {
                         if (index > -1) {
                             if (this.isMultiple) {
                                 currentFiles.splice(index, 1);
-                                this.uploadedFiles = JSON.stringify(currentFiles);
                             } else {
-                                this.uploadedFiles = JSON.stringify([]);
+                                currentFiles = [];
                             }
                             
+                            this.uploadedFiles = JSON.stringify(currentFiles);
+                            this.isLocalUpdate = true;
                             this.state = this.uploadedFiles;
                         }
                     } catch (error) {
