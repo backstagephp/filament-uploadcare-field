@@ -237,42 +237,94 @@ export default function uploadcareField(config) {
                 };
 
                 const handleFileRemoved = (e) => {
+                    console.log('handleFileRemoved triggered');
                     try {
                         const removedFile = e.detail;
+                        console.log('Removed file details:', removedFile);
                         let currentFiles = [];
                         
                         try {
                             currentFiles = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
-                            if (!Array.isArray(currentFiles)) {
-                                currentFiles = [];
+                            console.log('Current files before cleanup:', currentFiles);
+                            
+                            // First, clean up duplicate entries
+                            const uniqueFiles = new Map();
+                            
+                            currentFiles.forEach(file => {
+                                let uuid;
+                                if (typeof file === 'string') {
+                                    uuid = file.match(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i)?.[0];
+                                    if (uuid) {
+                                        // Only add string URL if we don't have the full object yet
+                                        if (!uniqueFiles.has(uuid)) {
+                                            uniqueFiles.set(uuid, file);
+                                        }
+                                    }
+                                } else {
+                                    uuid = file.uuid;
+                                    if (uuid) {
+                                        // Always prefer the full object over string URL
+                                        uniqueFiles.set(uuid, file);
+                                    }
+                                }
+                            });
+                            
+                            currentFiles = Array.from(uniqueFiles.values());
+                            console.log('Current files after cleanup:', currentFiles);
+                            
+                            // Find and remove the file that was deleted
+                            const findFile = (files, fileToRemove) => {
+                                console.log('Finding file to remove:', fileToRemove);
+                                return files.findIndex(file => {
+                                    if (typeof file === 'string') {
+                                        return file === fileToRemove.cdnUrl;
+                                    } else {
+                                        return file.uuid === fileToRemove.uuid;
+                                    }
+                                });
+                            };
+                            
+                            const index = findFile(currentFiles, removedFile);
+                            console.log('Found index to remove:', index);
+                            
+                            if (index > -1) {
+                                if (this.isMultiple) {
+                                    currentFiles.splice(index, 1);
+                                } else {
+                                    currentFiles = [];
+                                }
+                                
+                                console.log('Current files after removal:', currentFiles);
+                                
+                                // Convert back to the appropriate format based on isWithMetadata
+                                const finalFiles = currentFiles.map(file => {
+                                    if (this.isWithMetadata) {
+                                        if (typeof file === 'string') {
+                                            return {
+                                                uuid: file.match(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i)?.[0],
+                                                cdnUrl: file,
+                                                isImage: true,
+                                                mimeType: 'image/png'
+                                            };
+                                        }
+                                        return file;
+                                    }
+                                    return typeof file === 'object' ? file.cdnUrl : file;
+                                });
+                                
+                                this.uploadedFiles = JSON.stringify(finalFiles);
+                                this.isLocalUpdate = true;
+                                this.state = this.uploadedFiles;
+                                console.log('Final state:', this.state);
+                            } else {
+                                console.log('No matching file found to remove');
                             }
                         } catch (parseError) {
+                            console.log('Parse error:', parseError);
                             currentFiles = [];
                         }
-                        
-                        // Find and remove the file that was deleted
-                        const findFile = (files, fileToRemove) => {
-                            return files.findIndex(file => {
-                                const fileUrl = typeof file === 'object' ? file.cdnUrl : file;
-                                const removeUrl = typeof fileToRemove === 'object' ? fileToRemove.cdnUrl : fileToRemove;
-                                return fileUrl === removeUrl;
-                            });
-                        };
-                        
-                        const index = findFile(currentFiles, removedFile);
-                        if (index > -1) {
-                            if (this.isMultiple) {
-                                currentFiles.splice(index, 1);
-                            } else {
-                                currentFiles = [];
-                            }
-                            
-                            this.uploadedFiles = JSON.stringify(currentFiles);
-                            this.isLocalUpdate = true;
-                            this.state = this.uploadedFiles;
-                        }
                     } catch (error) {
-                        console.error('Error updating state after file removal:', error);
+                        console.error('Error in handleFileRemoved:', error);
                     }
                 };
 
