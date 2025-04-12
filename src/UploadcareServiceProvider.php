@@ -8,6 +8,8 @@ use Filament\Support\Assets\Css;
 use Filament\Support\Assets\Js;
 use Filament\Support\Facades\FilamentAsset;
 use Filament\Support\Facades\FilamentIcon;
+use Filament\Support\Facades\FilamentView;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Filesystem\Filesystem;
 use Livewire\Features\SupportTesting\Testable;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
@@ -83,6 +85,61 @@ class UploadcareServiceProvider extends PackageServiceProvider
 
         // Testing
         Testable::mixin(new TestsUploadcare);
+
+        FilamentView::registerRenderHook(PanelsRenderHook::HEAD_END, function () {
+            return <<<'HTML'
+                    <script type="module">
+                    import * as UC from "https://cdn.jsdelivr.net/npm/@uploadcare/file-uploader@v1/web/uc-file-uploader-inline.min.js";
+                        UC.defineComponents(UC);
+
+                        const handleSourceList = (wrapper) => {
+                            if (wrapper.classList.contains('processed')) return;
+
+                            const config = wrapper.querySelector('uc-config');
+                            if (!config) return;
+
+                            const sourceList = config.getAttribute('source-list') || '';
+                            const sources = sourceList.split(',');
+
+                            if (sources.length === 1) {
+                                wrapper.classList.add('single-source');
+                            }
+
+                            // Mark as processed to avoid reprocessing
+                            wrapper.classList.add('processed');
+                        };
+
+                        // Initial check for existing elements
+                        document.addEventListener('DOMContentLoaded', () => {
+                            document.querySelectorAll('.uploadcare-wrapper').forEach(handleSourceList);
+                        });
+
+                        // Watch for new elements
+                        const observer = new MutationObserver((mutations) => {
+                            mutations.forEach(mutation => {
+                                mutation.addedNodes.forEach(node => {
+                                    if (node.nodeType === 1) { // Check if it's an element node
+                                        if (node.classList?.contains('uploadcare-wrapper')) {
+                                            handleSourceList(node);
+                                        }
+                                        // Also check children of added nodes
+                                        node.querySelectorAll?.('.uploadcare-wrapper')?.forEach(handleSourceList);
+                                    }
+                                });
+                            });
+                        });
+
+                        // Start observing with more specific options
+                        observer.observe(document.body, {
+                            childList: true,
+                            subtree: true,
+                            attributes: true,
+                            attributeFilter: ['source-list']
+                        });
+
+                    </script>
+                HTML;
+        });
     }
 
     protected function getAssetPackageName(): ?string
@@ -96,9 +153,10 @@ class UploadcareServiceProvider extends PackageServiceProvider
     protected function getAssets(): array
     {
         return [
-            // AlpineComponent::make('filament-uploadcare-field', __DIR__ . '/../resources/dist/components/filament-uploadcare-field.js'),
-            // Css::make('filament-uploadcare-field-styles', __DIR__ . '/../resources/dist/filament-uploadcare-field.css'),
-            // Js::make('filament-uploadcare-field-scripts', __DIR__ . '/../resources/dist/filament-uploadcare-field.js'),
+            AlpineComponent::make('uploadcare', __DIR__ . '/../resources/js/components/uploadcare.js'),
+            Css::make('filament-uploadcare-field-styles', __DIR__ . '/../resources/dist/filament-uploadcare-field.css'),
+            Js::make('filament-uploadcare-field-scripts', __DIR__ . '/../resources/dist/filament-uploadcare-field.js')
+                ->module(),
         ];
     }
 
