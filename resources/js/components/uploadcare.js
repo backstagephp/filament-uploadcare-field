@@ -313,14 +313,6 @@ export default function uploadcareField(config) {
         formatFilesForState(files) {
             return files.map(file => {
                 if (this.isWithMetadata) {
-                    if (typeof file === 'string') {
-                        return {
-                            uuid: file.match(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/i)?.[0],
-                            cdnUrl: file,
-                            isImage: true,
-                            mimeType: 'image/png'
-                        };
-                    }
                     return file;
                 }
                 return typeof file === 'object' ? file.cdnUrl : file;
