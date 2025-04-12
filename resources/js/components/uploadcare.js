@@ -127,7 +127,7 @@ export default function uploadcareField(config) {
 
         initializeState(api) {
             this.$nextTick(() => {
-                if (this.initialState && !this.stateHasBeenInitialized) {
+                if (this.initialState && !this.stateHasBeenInitialized && !this.uploadedFiles) {
                     this.loadInitialState(api);
                 }
                 this.setupStateWatcher();
@@ -183,7 +183,9 @@ export default function uploadcareField(config) {
                 }
                 
                 if (newValue !== this.uploadedFiles) {
-                    console.log('External state change detected, ignoring to prevent cross-field contamination');
+                    if (newValue && newValue !== '[]' && newValue !== '""') {
+                        this.uploadedFiles = newValue;
+                    }
                 }
             });
         },
@@ -256,7 +258,17 @@ export default function uploadcareField(config) {
 
         updateFilesList(currentFiles, newFile) {
             if (this.isMultiple) {
-                return [...currentFiles, newFile];
+                // Check if the file already exists to prevent duplicates
+                const isDuplicate = currentFiles.some(file => {
+                    const existingUrl = typeof file === 'object' ? file.cdnUrl : file;
+                    const newUrl = typeof newFile === 'object' ? newFile.cdnUrl : newFile;
+                    return existingUrl === newUrl;
+                });
+                
+                if (!isDuplicate) {
+                    return [...currentFiles, newFile];
+                }
+                return currentFiles;
             }
             return [newFile];
         },
