@@ -50,8 +50,8 @@ php artisan vendor:publish --tag="filament-uploadcare-field-views"
 ## Basic Usage
 
 ```php
-use Vormkracht10\Uploadcare\Forms\Components\Uploadcare;
-use Vormkracht10\Uploadcare\Enums\Style;
+use Backstage\Uploadcare\Forms\Components\Uploadcare;
+use Backstage\Uploadcare\Enums\Style;
 
 public static function form(Form $form): Form
 {
@@ -158,8 +158,8 @@ class EditContent extends EditRecord
 Here's a comprehensive example showcasing multiple features:
 
 ```php
-use Vormkracht10\Uploadcare\Forms\Components\Uploadcare;
-use Vormkracht10\Uploadcare\Enums\Style;
+use Backstage\Uploadcare\Forms\Components\Uploadcare;
+use Backstage\Uploadcare\Enums\Style;
 
 public static function form(Form $form): Form
 {
