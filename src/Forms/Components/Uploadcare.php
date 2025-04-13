@@ -2,8 +2,8 @@
 
 namespace Backstage\Uploadcare\Forms\Components;
 
-use Filament\Forms\Components\Field;
 use Backstage\Uploadcare\Enums\Style;
+use Filament\Forms\Components\Field;
 
 class Uploadcare extends Field
 {
