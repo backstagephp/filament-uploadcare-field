@@ -1,9 +1,9 @@
 # Uploadcare FileUpload component for Filament Forms
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/vormkracht10/filament-uploadcare-field.svg?style=flat-square)](https://packagist.org/packages/vormkracht10/filament-uploadcare-field)
-[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/vormkracht10/filament-uploadcare-field/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/vormkracht10/filament-uploadcare-field/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/vormkracht10/filament-uploadcare-field/fix-php-code-styling.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/vormkracht10/filament-uploadcare-field/actions?query=workflow%3A"Fix+PHP+code+styling"+branch%3Amain)
-[![Total Downloads](https://img.shields.io/packagist/dt/vormkracht10/filament-uploadcare-field.svg?style=flat-square)](https://packagist.org/packages/vormkracht10/filament-uploadcare-field)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/backstage/filament-uploadcare-field.svg?style=flat-square)](https://packagist.org/packages/backstage/filament-uploadcare-field)
+[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/backstage/filament-uploadcare-field/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/backstagephp/filament-uploadcare-field/actions?query=workflow%3Arun-tests+branch%3Amain)
+[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/backstage/filament-uploadcare-field/fix-php-code-styling.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/backstagephp/filament-uploadcare-field/actions?query=workflow%3A"Fix+PHP+code+styling"+branch%3Amain)
+[![Total Downloads](https://img.shields.io/packagist/dt/backstage/filament-uploadcare-field.svg?style=flat-square)](https://packagist.org/packages/backstage/filament-uploadcare-field)
 
 ## Nice to meet you, we're [Vormkracht10](https://vormkracht10.nl)
 
@@ -23,7 +23,7 @@ This package provides a FileUpload component for Filament Forms that integrates 
 You can install the package via composer:
 
 ```bash
-composer require vormkracht10/filament-uploadcare-field
+composer require backstage/filament-uploadcare-field
 ```
 
 Then you need to add the Uploadcare public key to your `services.php` config file:

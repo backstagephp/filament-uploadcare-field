@@ -1,4 +1,4 @@
 <?php
 
-// translations for Vormkracht10/Uploadcare
+// translations for Backstage/Uploadcare
 return [];

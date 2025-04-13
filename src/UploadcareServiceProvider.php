@@ -1,6 +1,6 @@
 <?php
 
-namespace Vormkracht10\Uploadcare;
+namespace Backstage\Uploadcare;
 
 use Filament\Support\Assets\AlpineComponent;
 use Filament\Support\Assets\Asset;
@@ -15,7 +15,7 @@ use Livewire\Features\SupportTesting\Testable;
 use Spatie\LaravelPackageTools\Commands\InstallCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use Vormkracht10\Uploadcare\Testing\TestsUploadcare;
+use Backstage\Uploadcare\Testing\TestsUploadcare;
 
 class UploadcareServiceProvider extends PackageServiceProvider
 {
@@ -34,7 +34,7 @@ class UploadcareServiceProvider extends PackageServiceProvider
             ->hasCommands($this->getCommands())
             ->hasInstallCommand(function (InstallCommand $command) {
                 $command
-                    ->askToStarRepoOnGitHub('vormkracht10/filament-uploadcare-field');
+                    ->askToStarRepoOnGitHub('backstagephp/filament-uploadcare-field');
             });
 
         $configFileName = $package->shortName();
@@ -144,7 +144,7 @@ class UploadcareServiceProvider extends PackageServiceProvider
 
     protected function getAssetPackageName(): ?string
     {
-        return 'vormkracht10/filament-uploadcare-field';
+        return 'backstage/filament-uploadcare-field';
     }
 
     /**

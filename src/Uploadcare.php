@@ -1,5 +1,5 @@
 <?php
 
-namespace Vormkracht10\Uploadcare;
+namespace Backstage\Uploadcare;
 
 class Uploadcare {}

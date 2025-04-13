@@ -1,6 +1,6 @@
 <?php
 
-namespace Vormkracht10\Uploadcare\Tests;
+namespace Backstage\Uploadcare\Tests;
 
 use BladeUI\Heroicons\BladeHeroiconsServiceProvider;
 use BladeUI\Icons\BladeIconsServiceProvider;
@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 use RyanChandler\BladeCaptureDirective\BladeCaptureDirectiveServiceProvider;
-use Vormkracht10\Uploadcare\UploadcareServiceProvider;
+use Backstage\Uploadcare\UploadcareServiceProvider;
 
 class TestCase extends Orchestra
 {
@@ -25,7 +25,7 @@ class TestCase extends Orchestra
         parent::setUp();
 
         Factory::guessFactoryNamesUsing(
-            fn (string $modelName) => 'Vormkracht10\\Uploadcare\\Database\\Factories\\' . class_basename($modelName) . 'Factory'
+            fn(string $modelName) => 'Backstage\\Uploadcare\\Database\\Factories\\' . class_basename($modelName) . 'Factory'
         );
     }
 

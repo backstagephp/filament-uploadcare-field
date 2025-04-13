@@ -14,7 +14,7 @@
             <div
                 wire:ignore
                 x-load
-                x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('uploadcare', 'vormkracht10/filament-uploadcare-field') }}"
+                x-load-src="{{ \Filament\Support\Facades\FilamentAsset::getAlpineComponentSrc('uploadcare', 'backstage/filament-uploadcare-field') }}"
                 class="relative z-0 rounded-md bg-white dark:bg-gray-900 focus-within:ring focus-within:ring-primary-500 focus-within:z-10"
                 x-data="uploadcareField({
                     state: $wire.{{ $applyStateBindingModifiers("entangle('{$getStatePath()}')", isOptimisticallyLive: true) }},

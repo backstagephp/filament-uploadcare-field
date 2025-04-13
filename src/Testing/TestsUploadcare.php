@@ -1,6 +1,6 @@
 <?php
 
-namespace Vormkracht10\Uploadcare\Testing;
+namespace Backstage\Uploadcare\Testing;
 
 use Livewire\Features\SupportTesting\Testable;
 

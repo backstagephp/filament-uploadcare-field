@@ -1,9 +1,9 @@
 <?php
 
-namespace Vormkracht10\Uploadcare\Forms\Components;
+namespace Backstage\Uploadcare\Forms\Components;
 
 use Filament\Forms\Components\Field;
-use Vormkracht10\Uploadcare\Enums\Style;
+use Backstage\Uploadcare\Enums\Style;
 
 class Uploadcare extends Field
 {
