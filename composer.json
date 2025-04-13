@@ -39,8 +39,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Backstage\\FilamentUploadcareField\\": "src/",
-            "Backstage\\FilamentUploadcareField\\Database\\Factories\\": "database/factories/"
+            "Backstage\\Uploadcare\\": "src/",
+            "Backstage\\Uploadcare\\Database\\Factories\\": "database/factories/"
         }
     },
     "autoload-dev": {
