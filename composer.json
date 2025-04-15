@@ -21,9 +21,9 @@
     ],
     "require": {
         "php": "^8.2",
+        "filament/filament": "^3.3",
         "filament/forms": "^3.0",
-        "spatie/laravel-package-tools": "^1.15.0",
-        "backstage/fields": "dev-main"
+        "spatie/laravel-package-tools": "^1.15.0"
     },
     "require-dev": {
         "laravel/pint": "^1.0",
@@ -73,11 +73,5 @@
         }
     },
     "minimum-stability": "dev",
-    "prefer-stable": true,
-    "repositories": {
-        "backstage/fields": {
-            "type": "git",
-            "url": "https://github.com/backstagephp/fields.git"
-        }
-    }
+    "prefer-stable": true
 }
