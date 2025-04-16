@@ -85,3 +85,7 @@ body .uploadcare-wrapper:not(.single-source) uc-file-uploader-inline .uc-start-f
     --uc-simple-btn-hover-dark: rgb(75 75 75);
     --uc-simple-btn-foreground-dark: rgb(255 255 255);
 }
+
+.uc-credits {
+    display: none !important;
+}
