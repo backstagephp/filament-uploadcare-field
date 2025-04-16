@@ -26,7 +26,14 @@ export default function uploadcareField(config) {
         isLocalUpdate: false,
 
         init() {            
-            if (this.isContextAlreadyInitialized()) return;
+            // Clean up previous initialization if it exists
+            if (this.removeEventListeners) {
+                this.removeEventListeners();
+            }
+            
+            // Reset initialization state
+            this.isInitialized = false;
+            this.stateHasBeenInitialized = false;
             
             this.markContextAsInitialized();
             this.applyTheme();
@@ -35,6 +42,10 @@ export default function uploadcareField(config) {
         },
 
         isContextAlreadyInitialized() {
+            // Only check for initialization if we're not in a live context
+            if (this.$wire?.isLive) {
+                return false;
+            }
             return window._initializedUploadcareContexts.has(this.uniqueContextName);
         },
 
@@ -100,6 +111,11 @@ export default function uploadcareField(config) {
             this.removeRequiredAttributes();
             this.initializeState(api);
             this.setupEventListeners(api);
+            
+            // Add a mutation observer to handle live updates
+            if (this.$wire?.isLive) {
+                this.setupLiveUpdateObserver();
+            }
         },
 
         getUploadcareApi() {
@@ -317,6 +333,27 @@ export default function uploadcareField(config) {
                 }
                 return typeof file === 'object' ? file.cdnUrl : file;
             });
+        },
+
+        setupLiveUpdateObserver() {
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                        // Check if the context was re-rendered
+                        const newCtx = document.querySelector(`uc-upload-ctx-provider[ctx-name="${this.uniqueContextName}"]`);
+                        if (newCtx && newCtx !== this.ctx) {
+                            this.ctx = newCtx;
+                            this.initUploadcare();
+                        }
+                    }
+                });
+            });
+
+            // Observe the parent element for changes
+            const parentElement = this.ctx?.parentElement;
+            if (parentElement) {
+                observer.observe(parentElement, { childList: true, subtree: true });
+            }
         }
     };
 }
