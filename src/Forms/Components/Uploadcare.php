@@ -187,8 +187,8 @@ class Uploadcare extends Field
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
         $number = (int) preg_replace('/[^0-9]/', '', $size);
         $unit = strtoupper(preg_replace('/[^A-Za-z]/', '', $size));
-        
-        if (!in_array($unit, $units)) {
+
+        if (! in_array($unit, $units)) {
             throw new \InvalidArgumentException('Invalid size unit. Use B, KB, MB, GB, or TB.');
         }
 
