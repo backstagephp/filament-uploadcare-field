@@ -132,11 +132,31 @@ Uploadcare::make('images')
     ->maxLocalFileSizeBytes(524288000); // 500MB
 ```
 
-Alternatively, you can use the human-readable `maxLocalFileSize` method:
+#### `maxLocalFileSize(string $size)`
+
+Set the maximum file size for local uploads using human-readable format:
 
 ```php
 Uploadcare::make('images')
     ->maxLocalFileSize('10MB'); // Supports B, KB, MB, GB, TB
+```
+
+#### `cropPreset(string $preset)`
+
+Set the crop aspect ratio for images. The preset should be in format "width:height" (e.g., "1:1" for square, "16:9" for widescreen). Use an empty string for free crop:
+
+```php
+Uploadcare::make('images')
+    ->cropPreset('1:1'); // Square crop
+```
+
+#### `removeCopyright(bool $remove = true)`
+
+Remove the Uploadcare copyright from the uploader interface. This feature is available on some paid plans:
+
+```php
+Uploadcare::make('images')
+    ->removeCopyright(); // Remove copyright
 ```
 
 ### Metadata Handling

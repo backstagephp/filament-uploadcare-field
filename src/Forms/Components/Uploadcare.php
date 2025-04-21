@@ -36,6 +36,10 @@ class Uploadcare extends Field
 
     protected int $maxLocalFileSizeBytes = 524288000; // 500MB default
 
+    protected string $cropPreset = '';
+
+    protected bool $removeCopyright = false;
+
     public static function make(string $name): static
     {
         return parent::make($name)
@@ -148,6 +152,34 @@ class Uploadcare extends Field
     public function getMaxLocalFileSizeBytes(): int
     {
         return $this->maxLocalFileSizeBytes;
+    }
+
+    public function cropPreset(string $preset): static
+    {
+        if (!preg_match('/^\d+:\d+$/', $preset) && $preset !== '') {
+            throw new \InvalidArgumentException('Crop preset must be in format "width:height" or empty string for free crop.');
+        }
+
+        $this->cropPreset = $preset;
+
+        return $this;
+    }
+
+    public function getCropPreset(): string
+    {
+        return $this->cropPreset;
+    }
+
+    public function removeCopyright(bool $remove = true): static
+    {
+        $this->removeCopyright = $remove;
+
+        return $this;
+    }
+
+    public function shouldRemoveCopyright(): bool
+    {
+        return $this->removeCopyright;
     }
 
     public function maxLocalFileSize(string $size): static
