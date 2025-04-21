@@ -123,6 +123,15 @@ Uploadcare::make('images')
     ->sourceList(['local', 'url', 'camera', 'dropbox']);
 ```
 
+#### `maxLocalFileSizeBytes(int $bytes)`
+
+Set the maximum file size for local uploads in bytes (default is 500MB):
+
+```php
+Uploadcare::make('images')
+    ->maxLocalFileSizeBytes(524288000); // 500MB
+```
+
 ### Metadata Handling
 
 #### `withMetadata(bool $withMetadata = true)`

@@ -39,7 +39,8 @@
                     @if ($field->getMultipleMin() > 0) multiple-min="{{ $field->getMultipleMin() }}" @endif
                     @if ($field->getMultipleMax() > 0) multiple-max="{{ $field->getMultipleMax() }}" @endif
                     @if ($field->isImagesOnly()) img-only @else accept="{{ $field->getAccept() }}" @endif group-output
-                    @if (count(explode(',', $field->getSourceList())) > 1) source-list="{{ $field->getSourceList() }}" @endif>
+                    @if (count(explode(',', $field->getSourceList())) > 1) source-list="{{ $field->getSourceList() }}" @endif
+                    max-local-file-size-bytes="{{ $field->getMaxLocalFileSizeBytes() }}">
                 </uc-config>
 
                 <uc-upload-ctx-provider ctx-name="{{ $uniqueContextName }}" wire:ignore>

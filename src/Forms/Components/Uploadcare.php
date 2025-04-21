@@ -34,6 +34,8 @@ class Uploadcare extends Field
         'application/*',
     ];
 
+    protected int $maxLocalFileSizeBytes = 524288000; // 500MB default
+
     public static function make(string $name): static
     {
         return parent::make($name)
@@ -134,5 +136,17 @@ class Uploadcare extends Field
     public function getAccept(): string
     {
         return implode(',', $this->accept);
+    }
+
+    public function maxLocalFileSizeBytes(int $bytes): static
+    {
+        $this->maxLocalFileSizeBytes = $bytes;
+
+        return $this;
+    }
+
+    public function getMaxLocalFileSizeBytes(): int
+    {
+        return $this->maxLocalFileSizeBytes;
     }
 }
