@@ -132,6 +132,13 @@ Uploadcare::make('images')
     ->maxLocalFileSizeBytes(524288000); // 500MB
 ```
 
+Alternatively, you can use the human-readable `maxLocalFileSize` method:
+
+```php
+Uploadcare::make('images')
+    ->maxLocalFileSize('10MB'); // Supports B, KB, MB, GB, TB
+```
+
 ### Metadata Handling
 
 #### `withMetadata(bool $withMetadata = true)`
