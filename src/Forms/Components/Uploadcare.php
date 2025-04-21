@@ -156,7 +156,7 @@ class Uploadcare extends Field
 
     public function cropPreset(string $preset): static
     {
-        if (!preg_match('/^\d+:\d+$/', $preset) && $preset !== '') {
+        if (! preg_match('/^\d+:\d+$/', $preset) && $preset !== '') {
             throw new \InvalidArgumentException('Crop preset must be in format "width:height" or empty string for free crop.');
         }
 
