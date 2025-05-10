@@ -42,7 +42,8 @@
                     @if (count(explode(',', $field->getSourceList())) > 1) source-list="{{ $field->getSourceList() }}" @endif
                     max-local-file-size-bytes="{{ $field->getMaxLocalFileSizeBytes() }}"
                     @if($field->getCropPreset()) crop-preset="{{ $field->getCropPreset() }}" @endif
-                    @if($field->shouldRemoveCopyright()) remove-copyright @endif>
+                    @if($field->shouldRemoveCopyright()) remove-copyright @endif
+                    @if($field->isRequired()) required="true" @endif>
                 </uc-config>
 
                 <uc-upload-ctx-provider ctx-name="{{ $uniqueContextName }}" wire:ignore>

@@ -197,4 +197,15 @@ class Uploadcare extends Field
 
         return $this;
     }
+
+    public function getState(): mixed
+    {
+        $state = parent::getState();
+
+        if ($state === '[]' || $state === '""' || $state === null || $state === '') {
+            return null;
+        }
+
+        return $state;
+    }
 }
