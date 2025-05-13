@@ -40,6 +40,8 @@ class Uploadcare extends Field
 
     protected bool $removeCopyright = false;
 
+    protected string $cdnCname = 'https://ucarecdn.com';
+
     public static function make(string $name): static
     {
         return parent::make($name)
@@ -180,6 +182,18 @@ class Uploadcare extends Field
     public function shouldRemoveCopyright(): bool
     {
         return $this->removeCopyright;
+    }
+
+    public function cdnCname(string $cdnCname): static
+    {
+        $this->cdnCname = $cdnCname;
+
+        return $this;
+    }
+
+    public function getCdnCname(): string
+    {
+        return $this->cdnCname;
     }
 
     public function maxLocalFileSize(string $size): static

@@ -43,7 +43,8 @@
                     max-local-file-size-bytes="{{ $field->getMaxLocalFileSizeBytes() }}"
                     @if($field->getCropPreset()) crop-preset="{{ $field->getCropPreset() }}" @endif
                     @if($field->shouldRemoveCopyright()) remove-copyright @endif
-                    @if($field->isRequired()) required="true" @endif>
+                    @if($field->isRequired()) required="true" @endif
+                    cdn-cname="{{ $field->getCdnCname() }}">
                 </uc-config>
 
                 <uc-upload-ctx-provider ctx-name="{{ $uniqueContextName }}" wire:ignore>

@@ -76,6 +76,15 @@ Uploadcare::make('images')
     ->publicKey('your-custom-key');
 ```
 
+#### `cdnCname(string $cdnCname)`
+
+Set a custom CDN CNAME for serving files (default is 'https://ucarecdn.com'):
+
+```php
+Uploadcare::make('images')
+    ->cdnCname('https://your-custom-cdn.com');
+```
+
 #### `uploaderStyle(Style $style)`
 
 Set the uploader style (default is `Style::INLINE`):
