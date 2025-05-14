@@ -41,6 +41,10 @@ class Uploadcare extends Field
     protected bool $removeCopyright = false;
 
     protected string $cdnCname = 'https://ucarecdn.com';
+    
+    protected string $dbCdnCname = '';
+
+    protected bool $transformUrlsForDb = false;
 
     public static function make(string $name): static
     {
@@ -195,6 +199,24 @@ class Uploadcare extends Field
     {
         return $this->cdnCname;
     }
+    
+    public function dbCdnCname(string $dbCdnCname): static
+    {
+        $this->dbCdnCname = $dbCdnCname;
+        $this->transformUrlsForDb = !empty($dbCdnCname);
+
+        return $this;
+    }
+    
+    public function getDbCdnCname(): string
+    {
+        return $this->dbCdnCname ?: $this->cdnCname;
+    }
+    
+    public function shouldTransformUrlsForDb(): bool
+    {
+        return $this->transformUrlsForDb;
+    }
 
     public function maxLocalFileSize(string $size): static
     {
@@ -219,7 +241,52 @@ class Uploadcare extends Field
         if ($state === '[]' || $state === '""' || $state === null || $state === '') {
             return null;
         }
+        
+        // Transform URLs from database format back to ucarecdn.com format for the widget
+        if ($this->shouldTransformUrlsForDb() && !empty($state)) {
+            $state = $this->transformUrlsFromDb($state);
+        }
 
         return $state;
+    }
+    
+    public function transformUrlsFromDb($value): string
+    {
+        if (is_string($value)) {
+            return str_replace($this->getDbCdnCname(), 'https://ucarecdn.com', $value);
+        }
+        
+        return $value;
+    }
+    
+    protected function setUp(): void
+    {
+        parent::setUp();
+        
+        $this->afterStateHydrated(function (Uploadcare $component, $state) {
+            // Already handled in getState()
+        });
+        
+        $this->dehydrateStateUsing(function (Uploadcare $component, $state) {
+            if ($state === null) {
+                return null;
+            }
+            
+            // Transform URLs to database format when saving
+            if ($component->shouldTransformUrlsForDb()) {
+                return $this->transformUrlsToDb($state);
+            }
+            
+            return $state;
+        });
+    }
+    
+    public function transformUrlsToDb($value): string
+    {
+        if (is_string($value)) {
+            return str_replace('https://ucarecdn.com', $this->getDbCdnCname(), $value);
+        }
+        
+        return $value;
     }
 }

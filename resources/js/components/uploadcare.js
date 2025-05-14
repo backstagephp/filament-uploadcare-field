@@ -121,10 +121,8 @@ export default function uploadcareField(config) {
         removeRequiredAttributes() {
             setTimeout(() => {
                 const config = this.$el.closest('uc-config');
-                if (config && !config.hasAttribute('required')) {
-                    const inputs = document.querySelectorAll('uc-form-input input[required]');
-                    inputs.forEach(input => input.removeAttribute('required'));
-                }
+                const inputs = document.querySelectorAll('uc-form-input input[required]');
+                inputs.forEach(input => input.removeAttribute('required'));
             }, 100);
         },
 
@@ -215,7 +213,16 @@ export default function uploadcareField(config) {
             this.ctx.addEventListener('file-removed', handleFileRemoved);
 
             this.removeEventListeners = () => {
-                this.ctx.removeEventListener('file-upload-started', handleFileUploadStarted);
+                this.ctx.removeEventListener('file-upload-started', (e) => {
+                    const form = this.$el.closest('form');
+                    if (form) {
+                        form.dispatchEvent(new CustomEvent('form-processing-started', {
+                            detail: {
+                                message: 'Uploading file...',
+                            }
+                        }));
+                    }
+                });
                 this.ctx.removeEventListener('file-upload-success', handleFileUploadSuccess);
                 this.ctx.removeEventListener('file-url-changed', handleFileUrlChanged);
                 this.ctx.removeEventListener('file-removed', handleFileRemoved);
