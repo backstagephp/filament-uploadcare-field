@@ -27,7 +27,7 @@ export default function uploadcareField(config) {
 
         init() {            
             if (this.isContextAlreadyInitialized()) return;
-            
+
             this.markContextAsInitialized();
             this.applyTheme();
             this.initUploadcare();
@@ -44,7 +44,7 @@ export default function uploadcareField(config) {
 
         applyTheme() {
             const theme = this.getCurrentTheme();
-            const uploaders = document.querySelectorAll('uc-file-uploader-inline');
+            const uploaders = document.querySelectorAll(`uc-file-uploader-${this.uploaderStyle}`);
             uploaders.forEach(uploader => uploader.classList.add(`uc-${theme}`));
         },
 
