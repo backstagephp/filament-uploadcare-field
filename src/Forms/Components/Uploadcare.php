@@ -250,19 +250,47 @@ class Uploadcare extends Field
         return $state;
     }
 
-    public function transformUrlsFromDb($value): mixed
+    private function transformUrls($value, string $from, string $to): mixed
     {
+        $decodeIfJson = function ($v) use (&$decodeIfJson) {
+            if (is_string($v)) {
+                $decoded = json_decode($v, true);
+
+                if (json_last_error() === JSON_ERROR_NONE && ($decoded !== $v)) {
+                    return $decodeIfJson($decoded);
+                }
+            }
+            return $v;
+        };
+
+        $replaceCdn = function ($v) use ($from, $to) {
+            if (is_string($v)) {
+                return str_replace($from, $to, $v);
+            }
+            return $v;
+        };
+
+        $value = $decodeIfJson($value);
+
         if (is_string($value)) {
-            return str_replace($this->getDbCdnCname(), 'https://ucarecdn.com', $value);
+            return $replaceCdn($value);
         }
 
         if (is_array($value)) {
-            return array_map(function ($item) {
-                return is_string($item) ? str_replace($this->getDbCdnCname(), 'https://ucarecdn.com', $item) : $item;
-            }, $value);
+            return array_map($replaceCdn, $value);
         }
 
         return $value;
+    }
+
+    public function transformUrlsFromDb($value): mixed
+    {
+        return $this->transformUrls($value, $this->getDbCdnCname(), 'https://ucarecdn.com');
+    }
+
+    public function transformUrlsToDb($value): mixed
+    {
+        return $this->transformUrls($value, 'https://ucarecdn.com', $this->getDbCdnCname());
     }
 
     protected function setUp(): void
@@ -285,20 +313,5 @@ class Uploadcare extends Field
 
             return $state;
         });
-    }
-
-    public function transformUrlsToDb($value): mixed
-    {
-        if (is_string($value)) {
-            return str_replace('https://ucarecdn.com', $this->getDbCdnCname(), $value);
-        }
-
-        if (is_array($value)) {
-            return array_map(function ($item) {
-                return is_string($item) ? str_replace('https://ucarecdn.com', $this->getDbCdnCname(), $item) : $item;
-            }, $value);
-        }
-
-        return $value;
     }
 }
