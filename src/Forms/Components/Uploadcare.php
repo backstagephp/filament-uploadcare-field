@@ -260,6 +260,7 @@ class Uploadcare extends Field
                     return $decodeIfJson($decoded);
                 }
             }
+
             return $v;
         };
 
@@ -267,6 +268,7 @@ class Uploadcare extends Field
             if (is_string($v)) {
                 return str_replace($from, $to, $v);
             }
+
             return $v;
         };
 
