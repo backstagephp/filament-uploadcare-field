@@ -287,10 +287,16 @@ class Uploadcare extends Field
         });
     }
 
-    public function transformUrlsToDb($value): string
+    public function transformUrlsToDb($value): mixed
     {
         if (is_string($value)) {
             return str_replace('https://ucarecdn.com', $this->getDbCdnCname(), $value);
+        }
+
+        if (is_array($value)) {
+            return array_map(function ($item) {
+                return is_string($item) ? str_replace('https://ucarecdn.com', $this->getDbCdnCname(), $item) : $item;
+            }, $value);
         }
 
         return $value;
