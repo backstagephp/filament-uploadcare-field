@@ -39,6 +39,10 @@ return [
 > [!WARNING]
 > Do not use the Flysystem Uploadcare driver with Filament, as it may cause unexpected deletion of files. This component uses the Javascript Uploadcare widget independently of the filesystem driver.
 
+### Casting attributes
+
+While Filament typically recommends using an `array` cast for file upload fields, this package requires a different approach. Since the Uploadcare component handles JSON parsing internally, you should **not** add an `array` cast to your Eloquent model properties. This prevents double JSON encoding, which would make the data more difficult to work with in your application.
+
 ### Customization
 
 If you want to customize the view used by the component, you can publish the views:
@@ -95,6 +99,7 @@ Uploadcare::make('images')
 ```
 
 When this option is set, the component will:
+
 1. Transform URLs from 'https://ucarecdn.com' to your custom domain when saving to the database
 2. Transform URLs from your custom domain back to 'https://ucarecdn.com' when loading data for the uploader widget
 
