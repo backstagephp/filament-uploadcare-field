@@ -247,6 +247,10 @@ class Uploadcare extends Field
             $state = $this->transformUrlsFromDb($state);
         }
 
+        if (! is_array($state)) {
+            $state = [$state];
+        }
+
         return $state;
     }
 
