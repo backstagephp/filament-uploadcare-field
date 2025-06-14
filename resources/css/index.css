@@ -86,6 +86,10 @@ body .uploadcare-wrapper:not(.single-source) uc-file-uploader-inline .uc-start-f
     --uc-simple-btn-foreground-dark: rgb(255 255 255);
 }
 
+.uploadcare-wrapper uc-form-input {
+    display: none !important;
+}
+
 .uc-done-btn {
     display: none !important;
     visibility: hidden !important;
@@ -96,4 +100,3 @@ body .uploadcare-wrapper:not(.single-source) uc-file-uploader-inline .uc-start-f
     height: 0 !important;
     overflow: hidden !important;
 }
-
