@@ -2,9 +2,9 @@
 
 namespace Backstage\Uploadcare\Forms\Components;
 
-use InvalidArgumentException;
 use Backstage\Uploadcare\Enums\Style;
 use Filament\Forms\Components\Field;
+use InvalidArgumentException;
 
 class Uploadcare extends Field
 {
