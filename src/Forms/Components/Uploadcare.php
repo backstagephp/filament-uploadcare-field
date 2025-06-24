@@ -2,6 +2,7 @@
 
 namespace Backstage\Uploadcare\Forms\Components;
 
+use InvalidArgumentException;
 use Backstage\Uploadcare\Enums\Style;
 use Filament\Forms\Components\Field;
 
@@ -163,7 +164,7 @@ class Uploadcare extends Field
     public function cropPreset(string $preset): static
     {
         if (! preg_match('/^\d+:\d+$/', $preset) && $preset !== '') {
-            throw new \InvalidArgumentException('Crop preset must be in format "width:height" or empty string for free crop.');
+            throw new InvalidArgumentException('Crop preset must be in format "width:height" or empty string for free crop.');
         }
 
         $this->cropPreset = $preset;
@@ -225,7 +226,7 @@ class Uploadcare extends Field
         $unit = strtoupper(preg_replace('/[^A-Za-z]/', '', $size));
 
         if (! in_array($unit, $units)) {
-            throw new \InvalidArgumentException('Invalid size unit. Use B, KB, MB, GB, or TB.');
+            throw new InvalidArgumentException('Invalid size unit. Use B, KB, MB, GB, or TB.');
         }
 
         $exponent = array_search($unit, $units);
