@@ -1,5 +1,8 @@
 @import '../../vendor/filament/filament/resources/css/theme.css';
 
+@source '../../app/Filament/**/*.php';
+@source '../../resources/views/filament/**/*.blade.php';
+@source '../../vendor/filament/**/*.blade.php';
 
 .uploadcare-wrapper {
     all: revert;
