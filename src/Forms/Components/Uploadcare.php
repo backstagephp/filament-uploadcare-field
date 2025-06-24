@@ -47,7 +47,7 @@ class Uploadcare extends Field
 
     protected bool $transformUrlsForDb = false;
 
-    public static function make(string $name): static
+    public static function make(?string $name = null): static
     {
         return parent::make($name)
             ->publicKey(config('services.uploadcare.public_key'));
