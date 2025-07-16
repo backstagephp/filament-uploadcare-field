@@ -26,6 +26,7 @@ export default function uploadcareField(config) {
         isLocalUpdate: false,
 
         init() {            
+            console.log('init');
             if (this.isContextAlreadyInitialized()) return;
 
             this.markContextAsInitialized();
