@@ -39,7 +39,7 @@
                     @if ($field->getMultipleMin() > 0) multiple-min="{{ $field->getMultipleMin() }}" @endif
                     @if ($field->getMultipleMax() > 0) multiple-max="{{ $field->getMultipleMax() }}" @endif
                     @if ($field->isImagesOnly()) img-only @else accept="{{ $field->getAccept() }}" @endif group-output
-                    @if (count(explode(',', $field->getSourceList())) > 1) source-list="{{ $field->getSourceList() }}" @endif
+                    @if (count(explode(',', $field->getSourceList())) >= 1) source-list="{{ $field->getSourceList() }}" @endif
                     max-local-file-size-bytes="{{ $field->getMaxLocalFileSizeBytes() }}"
                     @if($field->getCropPreset()) crop-preset="{{ $field->getCropPreset() }}" @endif
                     @if($field->shouldRemoveCopyright()) remove-copyright @endif

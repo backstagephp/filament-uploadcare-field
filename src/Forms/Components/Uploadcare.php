@@ -43,10 +43,6 @@ class Uploadcare extends Field
 
     protected string $cdnCname = 'https://ucarecdn.com';
 
-    protected string $dbCdnCname = '';
-
-    protected bool $transformUrlsForDb = false;
-
     public static function make(?string $name = null): static
     {
         return parent::make($name)
@@ -201,24 +197,6 @@ class Uploadcare extends Field
         return $this->cdnCname;
     }
 
-    public function dbCdnCname(string $dbCdnCname): static
-    {
-        $this->dbCdnCname = $dbCdnCname;
-        $this->transformUrlsForDb = ! empty($dbCdnCname);
-
-        return $this;
-    }
-
-    public function getDbCdnCname(): string
-    {
-        return $this->dbCdnCname ?: $this->cdnCname;
-    }
-
-    public function shouldTransformUrlsForDb(): bool
-    {
-        return $this->transformUrlsForDb;
-    }
-
     public function maxLocalFileSize(string $size): static
     {
         $units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -239,15 +217,33 @@ class Uploadcare extends Field
     {
         $state = parent::getState();
 
-        if ($state === '[]' || $state === '""' || $state === null || $state === '') {
+        if ($this->isEmptyState($state)) {
             return null;
         }
 
-        // Transform URLs from database format back to ucarecdn.com format for the widget
-        if ($this->shouldTransformUrlsForDb() && ! empty($state)) {
-            $state = $this->transformUrlsFromDb($state);
+        $state = $this->normalizeState($state);
+        $state = $this->filterValidValues($state);
+
+        return $this->isEmptyState($state) ? null : $state;
+    }
+
+    private function isEmptyState(mixed $state): bool
+    {
+        return $state === '[]' || $state === '""' || $state === null || $state === '' ||
+               (is_array($state) && empty($state));
+    }
+
+    private function normalizeState(mixed $state): mixed
+    {
+        // Handle JSON string that might contain null values
+        if (is_string($state)) {
+            $decoded = json_decode($state, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $state = $decoded;
+            }
         }
 
+        // Ensure we always return an array
         if (! is_array($state)) {
             $state = [$state];
         }
@@ -255,49 +251,11 @@ class Uploadcare extends Field
         return $state;
     }
 
-    private function transformUrls($value, string $from, string $to): mixed
+    private function filterValidValues(array $state): array
     {
-        $decodeIfJson = function ($v) use (&$decodeIfJson) {
-            if (is_string($v)) {
-                $decoded = json_decode($v, true);
-
-                if (json_last_error() === JSON_ERROR_NONE && ($decoded !== $v)) {
-                    return $decodeIfJson($decoded);
-                }
-            }
-
-            return $v;
-        };
-
-        $replaceCdn = function ($v) use ($from, $to) {
-            if (is_string($v)) {
-                return str_replace($from, $to, $v);
-            }
-
-            return $v;
-        };
-
-        $value = $decodeIfJson($value);
-
-        if (is_string($value)) {
-            return $replaceCdn($value);
-        }
-
-        if (is_array($value)) {
-            return array_map($replaceCdn, $value);
-        }
-
-        return $value;
-    }
-
-    public function transformUrlsFromDb($value): mixed
-    {
-        return $this->transformUrls($value, $this->getDbCdnCname(), 'https://ucarecdn.com');
-    }
-
-    public function transformUrlsToDb($value): mixed
-    {
-        return $this->transformUrls($value, 'https://ucarecdn.com', $this->getDbCdnCname());
+        return array_filter($state, function ($item) {
+            return $item !== null && $item !== '' && $item !== 'null';
+        });
     }
 
     protected function setUp(): void
@@ -305,20 +263,7 @@ class Uploadcare extends Field
         parent::setUp();
 
         $this->afterStateHydrated(function (Uploadcare $component, $state) {
-            // Already handled in getState()
-        });
-
-        $this->dehydrateStateUsing(function (Uploadcare $component, $state) {
-            if ($state === null) {
-                return null;
-            }
-
-            // Transform URLs to database format when saving
-            if ($component->shouldTransformUrlsForDb()) {
-                return $this->transformUrlsToDb($state);
-            }
-
-            return $state;
+            // State handling is done in getState()
         });
     }
 }

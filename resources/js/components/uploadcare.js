@@ -111,7 +111,7 @@ export default function uploadcareField(config) {
         },
 
         isValidContext(api) {
-            return this.ctx && api && api.addFileFromCdnUrl;
+            return this.ctx && api && api.addFileFromUrl;
         },
 
         markAsInitialized() {
@@ -130,12 +130,6 @@ export default function uploadcareField(config) {
             this.$nextTick(() => {
                 if (this.initialState && !this.stateHasBeenInitialized && !this.uploadedFiles) {
                     this.loadInitialState(api);
-                } else if (!this.initialState && !this.stateHasBeenInitialized) {
-                    // Handle empty initial state
-                    this.stateHasBeenInitialized = true;
-                    this.uploadedFiles = this.isMultiple ? '[]' : '';
-                    this.isLocalUpdate = true;
-                    this.state = this.uploadedFiles;
                 }
                 this.setupStateWatcher();
             });
@@ -144,146 +138,94 @@ export default function uploadcareField(config) {
         loadInitialState(api) {
             try {
                 const parsedState = this.parseInitialState();
+                
+                // Skip if parsed state is empty, null, or contains only invalid values
+                if (!this.isValidInitialState(parsedState)) {
+                    this.stateHasBeenInitialized = true;
+                    return;
+                }
+                
                 this.addFilesFromInitialState(api, parsedState);
                 this.stateHasBeenInitialized = true;
-                
-                // Ensure the state is properly set to match the uploaded files
-                this.isLocalUpdate = true;
-                this.state = this.uploadedFiles;
             } catch (e) {
-                console.error('Error parsing initialState:', e);
+                console.error('Error loading initial state:', e);
+                this.stateHasBeenInitialized = true;
             }
+        },
+
+        isValidInitialState(parsedState) {
+            if (!parsedState) return false;
+            if (Array.isArray(parsedState)) {
+                // Check if array has any valid items
+                return parsedState.some(item => this.isValidFileItem(item));
+            }
+            // For single items, check if it's valid
+            return this.isValidFileItem(parsedState);
+        },
+
+        isValidFileItem(item) {
+            if (!item || item === null || item === undefined) return false;
+            if (typeof item === 'string') {
+                return item !== 'null' && item !== '' && item !== '[null]';
+            }
+            if (typeof item === 'object') {
+                const url = item.cdnUrl;
+                return url && url !== null && url !== 'null' && url !== '' && url !== '[null]';
+            }
+            return false;
         },
 
         parseInitialState() {
-            // Helper function to safely extract and parse JSON, handling double encoding
-            const safeParse = (value) => {
-                if (typeof value === 'string') {
-                    try {
-                        // First parse attempt
-                        let parsed = JSON.parse(value);
-                        
-                        // Check if the parsed result is also a JSON string (double encoding)
-                        if (typeof parsed === 'string') {
-                            try {
-                                parsed = JSON.parse(parsed);
-                            } catch (e) {
-                                // If second parse fails, return the first parsed result
-                                console.warn('Failed to parse double-encoded JSON:', e);
-                            }
-                        }
-                        
-                        return parsed;
-                    } catch (e) {
-                        console.warn('Failed to parse string as JSON:', e);
-                        return value;
-                    }
-                }
-                return value;
-            };
-            
-            // Handle Proxy objects (Livewire sometimes wraps arrays in Proxy)
-            if (this.initialState && typeof this.initialState === 'object' && !Array.isArray(this.initialState)) {
-                const keys = Object.keys(this.initialState);
-                if (keys.length === 1) {
-                    return safeParse(this.initialState[keys[0]]);
-                }
+            if (!this.initialState) {
+                return null;
             }
             
-            // Handle all other cases
-            return safeParse(this.initialState);
+            try {
+                const parsed = typeof this.initialState === 'string' 
+                    ? JSON.parse(this.initialState) 
+                    : this.initialState;
+                
+                // Handle edge cases
+                if (parsed === null || parsed === undefined) {
+                    return null;
+                }
+                
+                if (Array.isArray(parsed)) {
+                    return parsed.filter(item => this.isValidFileItem(item));
+                }
+                
+                return this.isValidFileItem(parsed) ? parsed : null;
+            } catch (error) {
+                console.warn('Error parsing initialState:', error);
+                return null;
+            }
         },
 
         addFilesFromInitialState(api, parsedState) {
-            // Ensure parsedState is a regular array, not a Proxy
-            let filesArray = parsedState;
-            if (parsedState && typeof parsedState === 'object' && !Array.isArray(parsedState)) {
-                // If it's a Proxy object, try to convert it to a regular array
-                try {
-                    filesArray = Array.from(parsedState);
-                } catch (e) {
-                    console.warn('Failed to convert Proxy to array:', e);
-                    filesArray = [parsedState];
-                }
-            } else if (!Array.isArray(parsedState)) {
-                filesArray = [parsedState];
-            }
-            
-            // If filesArray is an array with one element that is also an array, flatten it
-            if (Array.isArray(filesArray) && filesArray.length === 1 && Array.isArray(filesArray[0])) {
-                filesArray = filesArray[0];
-            }
-            
-            // Handle case where filesArray contains JSON strings that need to be parsed
-            if (Array.isArray(filesArray) && filesArray.length === 1 && typeof filesArray[0] === 'string') {
-                try {
-                    const parsed = JSON.parse(filesArray[0]);
-                    filesArray = Array.isArray(parsed) ? parsed : [parsed];
-                } catch (e) {
-                    console.warn('Failed to parse JSON string from filesArray[0]:', e);
-                }
-            }
-            
-            // Ensure we have an array of individual file objects
-            if (!Array.isArray(filesArray)) {
-                filesArray = [filesArray];
-            }
-            
-            const addFile = (item, index = 0) => {
-                if (!item) return;
-                
-                // If item is an array, process each element
-                if (Array.isArray(item)) {
-                    item.forEach((subItem, subIndex) => {
-                        addFile(subItem, `${index}.${subIndex}`);
-                    });
-                    return;
-                }
-                
-                // If item is a string, try to parse it as JSON
-                if (typeof item === 'string') {
+            if (Array.isArray(parsedState)) {
+                parsedState.forEach(item => {
+                    const url = typeof item === 'object' && item !== null ? item.cdnUrl : item;
                     try {
-                        const parsedItem = JSON.parse(item);
-                        addFile(parsedItem, index);
-                        return;
-                    } catch (e) {
-                        console.warn(`Failed to parse string item ${index} as JSON:`, e);
+                        // Use silent option to prevent event triggering
+                        api.addFileFromUrl(url, { silent: true });
+                    } catch (error) {
+                        console.warn('Failed to add file from CDN URL:', url, error);
                     }
-                }
-                
-                const url = typeof item === 'object' ? item.cdnUrl : item;
-                
-                if (!url || !this.isValidUrl(url)) {
-                    console.warn(`Invalid URL for file ${index}:`, url);
-                    return;
-                }
-                
+                });
+            } else if (parsedState) {
+                const url = typeof parsedState === 'object' && parsedState !== null ? parsedState.cdnUrl : parsedState;
                 try {
-                    api.addFileFromCdnUrl(url);
-                } catch (e) {
-                    console.error(`Failed to add file ${index} with URL ${url}:`, e);
+                    // Use silent option to prevent event triggering
+                    api.addFileFromUrl(url, { silent: true });
+                } catch (error) {
+                    console.warn('Failed to add file from CDN URL:', url, error);
                 }
-            };
-            
-            // Process each file in the array
-            filesArray.forEach(addFile);
-
-            // Store the formatted state to match what will be returned
-            const formattedState = this.formatFilesForState(filesArray);
-            this.uploadedFiles = JSON.stringify(formattedState);
-            
-            // Set the initial state to match the formatted version
-            this.initialState = this.uploadedFiles;
-        },
-
-        isValidUrl(string) {
-            if (!string || typeof string !== 'string') return false;
-            try {
-                new URL(string);
-                return true;
-            } catch {
-                return false;
             }
+
+            // Set the uploaded files state directly without triggering events
+            this.uploadedFiles = typeof this.initialState === 'string' 
+                ? this.initialState 
+                : JSON.stringify(parsedState);
         },
 
         setupStateWatcher() {
@@ -298,40 +240,12 @@ export default function uploadcareField(config) {
                     return;
                 }
                 
-                // Skip if the new value is empty and we don't have any files
-                if ((!newValue || newValue === '[]' || newValue === '""') && !this.uploadedFiles) {
-                    return;
-                }
-                
-                // Normalize both values for comparison
-                const normalizedNewValue = this.normalizeStateValue(newValue);
-                const normalizedUploadedFiles = this.normalizeStateValue(this.uploadedFiles);
-                
-                if (normalizedNewValue !== normalizedUploadedFiles) {
+                if (newValue !== this.uploadedFiles) {
                     if (newValue && newValue !== '[]' && newValue !== '""') {
                         this.uploadedFiles = newValue;
                     }
                 }
             });
-        },
-
-        normalizeStateValue(value) {
-            if (!value) return '';
-            
-            try {
-                // If it's already a string, try to parse it
-                const parsed = typeof value === 'string' ? JSON.parse(value) : value;
-                return JSON.stringify(this.formatFilesForState(parsed));
-            } catch (e) {
-                // If parsing fails, return the original value
-                return value;
-            }
-        },
-
-        isStateChanged() {
-            const currentState = this.normalizeStateValue(this.state);
-            const initialState = this.normalizeStateValue(this.initialState);
-            return currentState !== initialState;
         },
 
         setupEventListeners(api) {
@@ -373,83 +287,56 @@ export default function uploadcareField(config) {
         },
 
         createFileUploadSuccessHandler() {
-            let debounceTimer = null;
-            
             return (e) => {
-                // Debounce the handler to prevent multiple rapid calls
-                if (debounceTimer) {
-                    clearTimeout(debounceTimer);
-                }
-                
-                debounceTimer = setTimeout(() => {
-                    const fileData = this.isWithMetadata ? e.detail : e.detail.cdnUrl;
-                    try {
-                        const currentFiles = this.getCurrentFiles();
-                        const updatedFiles = this.updateFilesList(currentFiles, fileData);
-                        this.updateState(updatedFiles);
+                const fileData = this.isWithMetadata ? e.detail : e.detail.cdnUrl;
+                try {
+                    const currentFiles = this.getCurrentFiles();
+                    const updatedFiles = this.updateFilesList(currentFiles, fileData);
+                    this.updateState(updatedFiles);
 
-                        // Dispatch form processing finished event
-                        const form = this.$el.closest('form');
-                        if (form) {
-                            form.dispatchEvent(new CustomEvent('form-processing-finished'));
-                        }
-                    } catch (error) {
-                        console.error('Error updating state after upload:', error);
+                    // Dispatch form processing finished event
+                    const form = this.$el.closest('form');
+                    if (form) {
+                        form.dispatchEvent(new CustomEvent('form-processing-finished'));
                     }
-                }, 100); // 100ms debounce
+                } catch (error) {
+                    console.error('Error updating state after upload:', error);
+                }
             };
         },
 
         createFileUrlChangedHandler() {
-            let debounceTimer = null;
-            
             return (e) => {
                 const fileDetails = e.detail;
                 if (!fileDetails.cdnUrlModifiers) return;
 
-                // Debounce the handler to prevent multiple rapid calls
-                if (debounceTimer) {
-                    clearTimeout(debounceTimer);
+                try {
+                    const currentFiles = this.getCurrentFiles();
+                    const updatedFiles = this.updateFileUrl(currentFiles, fileDetails);
+                    this.updateState(updatedFiles);
+                } catch (error) {
+                    console.error('Error updating state after URL change:', error);
                 }
-                
-                debounceTimer = setTimeout(() => {
-                    try {
-                        const currentFiles = this.getCurrentFiles();
-                        const updatedFiles = this.updateFileUrl(currentFiles, fileDetails);
-                        this.updateState(updatedFiles);
-                    } catch (error) {
-                        console.error('Error updating state after URL change:', error);
-                    }
-                }, 100); // 100ms debounce
             };
         },
 
         createFileRemovedHandler() {
-            let debounceTimer = null;
-            
             return (e) => {
-                // Debounce the handler to prevent multiple rapid calls
-                if (debounceTimer) {
-                    clearTimeout(debounceTimer);
+                try {
+                    const removedFile = e.detail;
+                    const currentFiles = this.getCurrentFiles();
+                    const updatedFiles = this.removeFile(currentFiles, removedFile);
+                    this.updateState(updatedFiles);
+                } catch (error) {
+                    console.error('Error in handleFileRemoved:', error);
                 }
-                
-                debounceTimer = setTimeout(() => {
-                    try {
-                        const removedFile = e.detail;
-                        const currentFiles = this.getCurrentFiles();
-                        const updatedFiles = this.removeFile(currentFiles, removedFile);
-                        this.updateState(updatedFiles);
-                    } catch (error) {
-                        console.error('Error in handleFileRemoved:', error);
-                    }
-                }, 100); // 100ms debounce
             };
         },
 
         getCurrentFiles() {
             try {
                 const files = this.uploadedFiles ? JSON.parse(this.uploadedFiles) : [];
-                return Array.isArray(files) ? files : [];
+                return Array.isArray(files) ? files.filter(file => file !== null) : [];
             } catch (error) {
                 return [];
             }
@@ -459,8 +346,8 @@ export default function uploadcareField(config) {
             if (this.isMultiple) {
                 // Check if the file already exists to prevent duplicates
                 const isDuplicate = currentFiles.some(file => {
-                    const existingUrl = typeof file === 'object' ? file.cdnUrl : file;
-                    const newUrl = typeof newFile === 'object' ? newFile.cdnUrl : newFile;
+                    const existingUrl = typeof file === 'object' && file !== null ? file.cdnUrl : file;
+                    const newUrl = typeof newFile === 'object' && newFile !== null ? newFile.cdnUrl : newFile;
                     return existingUrl === newUrl;
                 });
                 
@@ -497,27 +384,31 @@ export default function uploadcareField(config) {
 
         findFileIndex(files, uuid) {
             return files.findIndex(file => {
-                const fileUrl = typeof file === 'object' ? file.cdnUrl : file;
+                const fileUrl = typeof file === 'object' && file !== null ? file.cdnUrl : file;
                 return fileUrl && fileUrl.includes(uuid);
             });
         },
 
         updateState(files) {
             const finalFiles = this.formatFilesForState(files);
-            const newState = JSON.stringify(finalFiles);
+            this.uploadedFiles = JSON.stringify(finalFiles);
+            this.isLocalUpdate = true;
             
-            // More robust comparison - parse and compare the actual content
-            const currentFiles = this.getCurrentFiles();
-            const currentStateNormalized = JSON.stringify(this.formatFilesForState(currentFiles));
-            const newStateNormalized = JSON.stringify(this.formatFilesForState(finalFiles));
+            // Normalize both strings for comparison by parsing and re-stringifying
+            const normalizeForComparison = (str) => {
+                try {
+                    return JSON.stringify(JSON.parse(str));
+                } catch (e) {
+                    return str;
+                }
+            };
             
-            const hasActuallyChanged = currentStateNormalized !== newStateNormalized;
+            const normalizedUploadedFiles = normalizeForComparison(this.uploadedFiles);
+            const normalizedState = normalizeForComparison(this.state);
             
-            // Only update if the state actually changed
-            if (hasActuallyChanged) {
-                this.uploadedFiles = newState;
-                this.isLocalUpdate = true;
-                this.state = this.uploadedFiles;
+            if (normalizedUploadedFiles !== normalizedState) {
+                this.$wire.set(this.statePath, this.uploadedFiles);
+                // this.state = this.uploadedFiles;
             }
         },
 
@@ -526,7 +417,7 @@ export default function uploadcareField(config) {
                 if (this.isWithMetadata) {
                     return file;
                 }
-                return typeof file === 'object' ? file.cdnUrl : file;
+                return typeof file === 'object' && file !== null ? file.cdnUrl : file;
             });
         }
     };
