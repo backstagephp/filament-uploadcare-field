@@ -228,7 +228,7 @@ class Uploadcare extends Field
 
     private function isEmptyState(mixed $state): bool
     {
-        return $state === '[]' || $state === '""' || $state === null || $state === '' || 
+        return $state === '[]' || $state === '""' || $state === null || $state === '' ||
                (is_array($state) && empty($state));
     }
 
@@ -243,7 +243,7 @@ class Uploadcare extends Field
         }
 
         // Ensure we always return an array
-        if (!is_array($state)) {
+        if (! is_array($state)) {
             $state = [$state];
         }
 
