@@ -229,7 +229,7 @@ class Uploadcare extends Field
     private function isEmptyState(mixed $state): bool
     {
         return $state === '[]' || $state === '""' || $state === null || $state === '' ||
-               (is_array($state) && empty($state));
+            (is_array($state) && empty($state));
     }
 
     private function normalizeState(mixed $state): mixed
