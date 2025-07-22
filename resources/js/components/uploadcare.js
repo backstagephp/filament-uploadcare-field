@@ -47,7 +47,7 @@ export default function uploadcareField(config) {
             const theme = this.getCurrentTheme();
             const uploaders = document.querySelectorAll(
                 `uc-file-uploader-${this.uploaderStyle}`,
-            );
+            )
             uploaders.forEach((uploader) =>
                 uploader.classList.add(`uc-${theme}`),
             );
@@ -58,7 +58,7 @@ export default function uploadcareField(config) {
             return userTheme === 'system'
                 ? window.matchMedia('(prefers-color-scheme: dark)').matches
                     ? 'dark'
-                    : 'light'
+                    : 'light';
                 : userTheme;
         },
 
@@ -97,7 +97,7 @@ export default function uploadcareField(config) {
             if (retryCount >= maxRetries) {
                 console.error(
                     'Failed to initialize Uploadcare after maximum retries',
-                )
+                );
                 return;
             }
             this.ctx = document.querySelector(
@@ -108,7 +108,7 @@ export default function uploadcareField(config) {
                 setTimeout(
                     () => this.initializeUploader(retryCount + 1, maxRetries),
                     100,
-                )
+                );
                 return;
             }
             this.markAsInitialized();
@@ -139,7 +139,7 @@ export default function uploadcareField(config) {
                 const inputs = document.querySelectorAll(
                     'uc-form-input input[required]',
                 );
-                inputs.forEach((input) => input.removeAttribute('required'));
+                inputs.forEach((input) => input.removeAttribute('required'))
             }, 100);
         },
 
@@ -154,7 +154,7 @@ export default function uploadcareField(config) {
                 }
                 this.stateHasBeenInitialized = true;
                 this.setupStateWatcher();
-            })
+            });
         },
 
         loadInitialState(api) {
@@ -186,16 +186,16 @@ export default function uploadcareField(config) {
                 return item !== 'null' && item !== '' && item !== '[null]';
             }
             if (typeof item === 'object') {
-                const url = item.cdnUrl;
+                const url = item.cdnUrl
                 return (
                     url &&
                     url !== null &&
                     url !== 'null' &&
                     url !== '' &&
-                    url !== '[null]';
+                    url !== '[null]'
                 );
             }
-            return false;
+            return false
         },
 
         parseInitialState() {
@@ -206,17 +206,17 @@ export default function uploadcareField(config) {
                 const parsed =
                     typeof this.initialState === 'string'
                         ? JSON.parse(this.initialState)
-                        : this.initialState;
+                        : this.initialState
                 if (parsed === null || parsed === undefined) {
                     return null;
                 }
                 if (Array.isArray(parsed)) {
-                    return parsed.filter((item) => this.isValidFileItem(item));
+                    return parsed.filter((item) => this.isValidFileItem(item))
                 }
                 return this.isValidFileItem(parsed) ? parsed : null;
             } catch (error) {
-                console.warn('Error parsing initialState:', error)
-                return null
+                console.warn('Error parsing initialState:', error);
+                return null;
             }
         },
 
@@ -226,9 +226,9 @@ export default function uploadcareField(config) {
                     const url =
                         typeof item === 'object' && item !== null
                             ? item.cdnUrl
-                            : item
+                            : item;
                     try {
-                        api.addFileFromUrl(url, { silent: true });
+                        api.addFileFromUrl(url, { silent: true })
                     } catch (error) {
                         console.warn(
                             'Failed to add file from CDN URL:',
@@ -236,14 +236,14 @@ export default function uploadcareField(config) {
                             error,
                         );
                     }
-                });
+                })
             } else if (parsedState) {
                 const url =
                     typeof parsedState === 'object' && parsedState !== null
                         ? parsedState.cdnUrl
                         : parsedState;
                 try {
-                    api.addFileFromUrl(url, { silent: true });
+                    api.addFileFromUrl(url, { silent: true })
                 } catch (error) {
                     console.warn('Failed to add file from CDN URL:', url, error);
                 }
@@ -268,9 +268,9 @@ export default function uploadcareField(config) {
 
         setupEventListeners(api) {
             const handleFileUploadSuccess =
-                this.createFileUploadSuccessHandler();
-            const handleFileUrlChanged = this.createFileUrlChangedHandler();
-            const handleFileRemoved = this.createFileRemovedHandler();
+                this.createFileUploadSuccessHandler()
+            const handleFileUrlChanged = this.createFileUrlChangedHandler()
+            const handleFileRemoved = this.createFileRemovedHandler()
             this.ctx.addEventListener('file-upload-started', (e) => {
                 const form = this.$el.closest('form')
                 if (form) {
@@ -287,8 +287,8 @@ export default function uploadcareField(config) {
                 'file-upload-success',
                 handleFileUploadSuccess,
             );
-            this.ctx.addEventListener('file-url-changed', handleFileUrlChanged);
-            this.ctx.addEventListener('file-removed', handleFileRemoved);
+            this.ctx.addEventListener('file-url-changed', handleFileUrlChanged)
+            this.ctx.addEventListener('file-removed', handleFileRemoved)
             this.removeEventListeners = () => {
                 this.ctx.removeEventListener('file-upload-started', (e) => {
                     const form = this.$el.closest('form')
@@ -318,22 +318,22 @@ export default function uploadcareField(config) {
             return (e) => {
                 const fileData = this.isWithMetadata
                     ? e.detail
-                    : e.detail.cdnUrl;
+                    : e.detail.cdnUrl
                 try {
                     const currentFiles = this.getCurrentFiles()
                     const updatedFiles = this.updateFilesList(
                         currentFiles,
                         fileData,
-                    );
-                    this.updateState(updatedFiles);
-                    const form = this.$el.closest('form');
+                    )
+                    this.updateState(updatedFiles)
+                    const form = this.$el.closest('form')
                     if (form) {
                         form.dispatchEvent(
                             new CustomEvent('form-processing-finished'),
-                        );
+                        )
                     }
                 } catch (error) {
-                    console.error('Error updating state after upload:', error);
+                    console.error('Error updating state after upload:', error)
                 }
             };
         },
@@ -341,35 +341,35 @@ export default function uploadcareField(config) {
         createFileUrlChangedHandler() {
             return (e) => {
                 const fileDetails = e.detail
-                if (!fileDetails.cdnUrlModifiers) return;
+                if (!fileDetails.cdnUrlModifiers) return
                 try {
-                    const currentFiles = this.getCurrentFiles();
+                    const currentFiles = this.getCurrentFiles()
                     const updatedFiles = this.updateFileUrl(
                         currentFiles,
                         fileDetails,
-                    );
-                    this.updateState(updatedFiles);
+                    )
+                    this.updateState(updatedFiles)
                 } catch (error) {
                     console.error(
                         'Error updating state after URL change:',
                         error,
-                    );
+                    )
                 }
-            }
+            };
         },
 
         createFileRemovedHandler() {
             return (e) => {
                 try {
-                    const removedFile = e.detail;
-                    const currentFiles = this.getCurrentFiles();
+                    const removedFile = e.detail
+                    const currentFiles = this.getCurrentFiles()
                     const updatedFiles = this.removeFile(
                         currentFiles,
                         removedFile,
-                    );
-                    this.updateState(updatedFiles);
+                    )
+                    this.updateState(updatedFiles)
                 } catch (error) {
-                    console.error('Error in handleFileRemoved:', error);
+                    console.error('Error in handleFileRemoved:', error)
                 }
             };
         },
@@ -409,24 +409,24 @@ export default function uploadcareField(config) {
         },
 
         updateFileUrl(currentFiles, fileDetails) {
-            const fileIndex = this.findFileIndex(currentFiles, fileDetails.uuid);
+            const fileIndex = this.findFileIndex(currentFiles, fileDetails.uuid)
             if (fileIndex === -1) return currentFiles;
             const updatedFile = this.isWithMetadata
                 ? fileDetails
-                : fileDetails.cdnUrl;
+                : fileDetails.cdnUrl
             if (this.isMultiple) {
-                currentFiles[fileIndex] = updatedFile;
-                return currentFiles;
+                currentFiles[fileIndex] = updatedFile
+                return currentFiles
             }
             return [updatedFile];
         },
 
         removeFile(currentFiles, removedFile) {
-            const index = this.findFileIndex(currentFiles, removedFile.uuid);
+            const index = this.findFileIndex(currentFiles, removedFile.uuid)
             if (index === -1) return currentFiles;
             if (this.isMultiple) {
-                currentFiles.splice(index, 1);
-                return currentFiles;
+                currentFiles.splice(index, 1)
+                return currentFiles
             }
             return [];
         },
@@ -436,15 +436,15 @@ export default function uploadcareField(config) {
                 const fileUrl =
                     typeof file === 'object' && file !== null
                         ? file.cdnUrl
-                        : file;
-                return fileUrl && fileUrl.includes(uuid);
+                        : file
+                return fileUrl && fileUrl.includes(uuid)
             });
         },
 
         updateState(files) {
-            const finalFiles = this.formatFilesForState(files);
-            this.uploadedFiles = JSON.stringify(finalFiles);
-            this.isLocalUpdate = true;
+            const finalFiles = this.formatFilesForState(files)
+            this.uploadedFiles = JSON.stringify(finalFiles)
+            this.isLocalUpdate = true
             const normalizeForComparison = (str) => {
                 try {
                     return JSON.stringify(JSON.parse(str));
@@ -455,9 +455,9 @@ export default function uploadcareField(config) {
             const normalizedUploadedFiles = normalizeForComparison(
                 this.uploadedFiles,
             );
-            const normalizedState = normalizeForComparison(this.state);
+            const normalizedState = normalizeForComparison(this.state)
             if (normalizedUploadedFiles !== normalizedState) {
-                this.$wire.set(this.statePath, this.uploadedFiles);
+                this.$wire.set(this.statePath, this.uploadedFiles)
                 // this.state = this.uploadedFiles;
             }
         },
@@ -468,10 +468,9 @@ export default function uploadcareField(config) {
                     return file;
                 }
                 return typeof file === 'object' && file !== null
-                        ? file.cdnUrl
-                        : file;
-                },
-            );
+                    ? file.cdnUrl
+                    : file;
+            });
         },
-    }
+    };
 }
