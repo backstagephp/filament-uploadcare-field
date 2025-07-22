@@ -58,7 +58,7 @@ export default function uploadcareField(config) {
             return userTheme === 'system'
                 ? window.matchMedia('(prefers-color-scheme: dark)').matches
                     ? 'dark'
-                    : 'light';
+                    : 'light'
                 : userTheme;
         },
 
