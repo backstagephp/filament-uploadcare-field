@@ -26,7 +26,9 @@ export default function uploadcareField(config) {
         isLocalUpdate: false,
 
         init() {
-            if (this.isContextAlreadyInitialized()) return;
+            if (this.isContextAlreadyInitialized()) {
+                return;
+            }
             this.markContextAsInitialized();
             this.applyTheme();
             this.initUploadcare();
@@ -45,7 +47,7 @@ export default function uploadcareField(config) {
 
         applyTheme() {
             const theme = this.getCurrentTheme();
-            const uploaders = document.querySelectorAll(
+            const uploaders = this.$el.querySelectorAll(
                 `uc-file-uploader-${this.uploaderStyle}`,
             )
             uploaders.forEach((uploader) =>
@@ -95,12 +97,9 @@ export default function uploadcareField(config) {
 
         initializeUploader(retryCount = 0, maxRetries = 10) {
             if (retryCount >= maxRetries) {
-                console.error(
-                    'Failed to initialize Uploadcare after maximum retries',
-                );
                 return;
             }
-            this.ctx = document.querySelector(
+            this.ctx = this.$el.querySelector(
                 `uc-upload-ctx-provider[ctx-name="${this.uniqueContextName}"]`,
             );
             const api = this.getUploadcareApi()
@@ -136,7 +135,7 @@ export default function uploadcareField(config) {
         removeRequiredAttributes() {
             setTimeout(() => {
                 const config = this.$el.closest('uc-config');
-                const inputs = document.querySelectorAll(
+                const inputs = this.$el.querySelectorAll(
                     'uc-form-input input[required]',
                 );
                 inputs.forEach((input) => input.removeAttribute('required'))
@@ -167,7 +166,6 @@ export default function uploadcareField(config) {
                 this.addFilesFromInitialState(api, parsedState);
                 this.stateHasBeenInitialized = true;
             } catch (e) {
-                console.error('Error loading initial state:', e);
                 this.stateHasBeenInitialized = true;
             }
         },
@@ -215,7 +213,6 @@ export default function uploadcareField(config) {
                 }
                 return this.isValidFileItem(parsed) ? parsed : null;
             } catch (error) {
-                console.warn('Error parsing initialState:', error);
                 return null;
             }
         },
@@ -230,11 +227,6 @@ export default function uploadcareField(config) {
                     try {
                         api.addFileFromUrl(url, { silent: true })
                     } catch (error) {
-                        console.warn(
-                            'Failed to add file from CDN URL:',
-                            url,
-                            error,
-                        );
                     }
                 })
             } else if (parsedState) {
@@ -245,7 +237,6 @@ export default function uploadcareField(config) {
                 try {
                     api.addFileFromUrl(url, { silent: true })
                 } catch (error) {
-                    console.warn('Failed to add file from CDN URL:', url, error);
                 }
             }
         },
@@ -333,7 +324,6 @@ export default function uploadcareField(config) {
                         )
                     }
                 } catch (error) {
-                    console.error('Error updating state after upload:', error)
                 }
             };
         },
@@ -350,10 +340,6 @@ export default function uploadcareField(config) {
                     )
                     this.updateState(updatedFiles)
                 } catch (error) {
-                    console.error(
-                        'Error updating state after URL change:',
-                        error,
-                    )
                 }
             };
         },
@@ -369,7 +355,6 @@ export default function uploadcareField(config) {
                     )
                     this.updateState(updatedFiles)
                 } catch (error) {
-                    console.error('Error in handleFileRemoved:', error)
                 }
             };
         },
