@@ -258,10 +258,9 @@ export default function uploadcareField(config) {
         },
 
         setupEventListeners(api) {
-            const handleFileUploadSuccess =
-                this.createFileUploadSuccessHandler()
-            const handleFileUrlChanged = this.createFileUrlChangedHandler()
-            const handleFileRemoved = this.createFileRemovedHandler()
+            const handleFileUploadSuccess = this.createFileUploadSuccessHandler();
+            const handleFileUrlChanged = this.createFileUrlChangedHandler();
+            const handleFileRemoved = this.createFileRemovedHandler();
             this.ctx.addEventListener('file-upload-started', (e) => {
                 const form = this.$el.closest('form')
                 if (form) {
@@ -278,8 +277,8 @@ export default function uploadcareField(config) {
                 'file-upload-success',
                 handleFileUploadSuccess,
             );
-            this.ctx.addEventListener('file-url-changed', handleFileUrlChanged)
-            this.ctx.addEventListener('file-removed', handleFileRemoved)
+            this.ctx.addEventListener('file-url-changed', handleFileUrlChanged);
+            this.ctx.addEventListener('file-removed', handleFileRemoved);
             this.removeEventListeners = () => {
                 this.ctx.removeEventListener('file-upload-started', (e) => {
                     const form = this.$el.closest('form')
@@ -428,22 +427,27 @@ export default function uploadcareField(config) {
 
         updateState(files) {
             const finalFiles = this.formatFilesForState(files)
-            this.uploadedFiles = JSON.stringify(finalFiles)
-            this.isLocalUpdate = true
-            const normalizeForComparison = (str) => {
-                try {
-                    return JSON.stringify(JSON.parse(str));
-                } catch (e) {
-                    return str;
+            const newUploadedFiles = JSON.stringify(finalFiles)
+            
+            // Only update if the files have actually changed
+            if (newUploadedFiles !== this.uploadedFiles) {
+                this.uploadedFiles = newUploadedFiles
+                this.isLocalUpdate = true
+                
+                const normalizeForComparison = (str) => {
+                    try {
+                        return JSON.stringify(JSON.parse(str));
+                    } catch (e) {
+                        return str;
+                    }
+                };
+                const normalizedUploadedFiles = normalizeForComparison(
+                    this.uploadedFiles,
+                );
+                const normalizedState = normalizeForComparison(this.state)
+                if (normalizedUploadedFiles !== normalizedState) {
+                    this.$wire.set(this.statePath, this.uploadedFiles)
                 }
-            };
-            const normalizedUploadedFiles = normalizeForComparison(
-                this.uploadedFiles,
-            );
-            const normalizedState = normalizeForComparison(this.state)
-            if (normalizedUploadedFiles !== normalizedState) {
-                this.$wire.set(this.statePath, this.uploadedFiles)
-                // this.state = this.uploadedFiles;
             }
         },
 
@@ -457,5 +461,7 @@ export default function uploadcareField(config) {
                     : file;
             });
         },
+
+
     };
 }

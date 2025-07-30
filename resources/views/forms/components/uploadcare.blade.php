@@ -1,4 +1,4 @@
-<div wire:key="uploadcare-wrapper-{{ $getStatePath() }}-{{ \Illuminate\Support\Str::random() }}">
+<div wire:key="uploadcare-wrapper-{{ $getStatePath() }}">
     <x-dynamic-component :component="$getFieldWrapperView()" :field="$field">
         @php
             $sourceList = $field->getSourceList();
@@ -7,7 +7,7 @@
             $style = $field->getUploaderStyle();
             $cssFile = "https://cdn.jsdelivr.net/npm/@uploadcare/file-uploader@v1/web/uc-file-uploader-{$style}.min.css";
             $jsFile = "https://cdn.jsdelivr.net/npm/@uploadcare/file-uploader@v1/web/uc-file-uploader-{$style}.min.js";
-            $uniqueContextName = $getStatePath() . '-' . \Illuminate\Support\Str::random();
+            $uniqueContextName = $getStatePath();
         @endphp
 
         <div class="uploadcare-wrapper {{ $initialClass }}">
@@ -44,7 +44,8 @@
                     @if($field->getCropPreset()) crop-preset="{{ $field->getCropPreset() }}" @endif
                     @if($field->shouldRemoveCopyright()) remove-copyright @endif
                     @if($field->isRequired()) required="true" @endif
-                    cdn-cname="{{ $field->getCdnCname() }}">
+                    cdn-cname="{{ $field->getCdnCname() }}"
+                    check-for-url-duplicates="true">
                 </uc-config>
 
                 <uc-upload-ctx-provider ctx-name="{{ $uniqueContextName }}" wire:ignore>
