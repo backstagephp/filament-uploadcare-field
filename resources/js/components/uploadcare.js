@@ -217,28 +217,62 @@ export default function uploadcareField(config) {
             }
         },
 
-        addFilesFromInitialState(api, parsedState) {
+        extractUuidFromUrl(url) {
+            if (!url || typeof url !== 'string') {
+                return null;
+            }
+            
+            // UUID pattern: 8-4-4-4-12 hexadecimal characters
+            const uuidPattern = /([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i;
+            const match = url.match(uuidPattern);
+            
+            return match ? match[1] : null;
+        },
+
+        addFilesFromInitialState(api, parsedState) {            
             if (Array.isArray(parsedState)) {
                 parsedState.forEach((item) => {
-                    const url =
-                        typeof item === 'object' && item !== null
-                            ? item.cdnUrl
-                            : item;
-                    try {
-                        api.addFileFromUrl(url, { silent: true })
-                    } catch (error) {
-                    }
-                })
+                    this.addSingleFileFromState(api, item);
+                });
             } else if (parsedState) {
-                const url =
-                    typeof parsedState === 'object' && parsedState !== null
-                        ? parsedState.cdnUrl
-                        : parsedState;
-                try {
-                    api.addFileFromUrl(url, { silent: true })
-                } catch (error) {
-                }
+                this.addSingleFileFromState(api, parsedState);
             }
+        },
+
+        addSingleFileFromState(api, item) {
+            const { uuid, url } = this.extractFileInfo(item);
+            
+            try {
+                if (uuid) {
+                    api.addFileFromUuid(uuid, { silent: true });
+                } else {
+                    console.warn('Could not extract UUID from URL:', url);
+                }
+            } catch (error) {
+                console.error('Error adding file from UUID:', error);
+            }
+        },
+
+        extractFileInfo(item) {
+            let uuid = this.isObjectWithUuid(item) ? item.uuid : null;
+            const url = this.extractUrlFromItem(item);
+            
+            if (!uuid && url) {
+                uuid = this.extractUuidFromUrl(url);
+            }
+            
+            return { uuid, url };
+        },
+
+        isObjectWithUuid(item) {
+            return typeof item === 'object' && item !== null && item.uuid;
+        },
+
+        extractUrlFromItem(item) {
+            if (typeof item === 'object' && item !== null) {
+                return item.cdnUrl;
+            }
+            return item;
         },
 
         setupStateWatcher() {
