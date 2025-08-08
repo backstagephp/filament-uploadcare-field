@@ -89,22 +89,6 @@ Uploadcare::make('images')
     ->cdnCname('https://your-custom-cdn.com');
 ```
 
-#### `dbCdnCname(string $dbCdnCname)`
-
-Set a custom CDN CNAME for storing URLs in your database. This allows you to bypass CDN limitations by transforming URLs when saving to and retrieving from the database:
-
-```php
-Uploadcare::make('images')
-    ->dbCdnCname('https://your-custom-cdn.com');
-```
-
-When this option is set, the component will:
-
-1. Transform URLs from 'https://ucarecdn.com' to your custom domain when saving to the database
-2. Transform URLs from your custom domain back to 'https://ucarecdn.com' when loading data for the uploader widget
-
-This is particularly useful when you need to use your own domain for serving files while maintaining compatibility with Uploadcare's system.
-
 #### `uploaderStyle(Style $style)`
 
 Set the uploader style (default is `Style::INLINE`):
