@@ -1,3 +1,5 @@
+import { DoneButtonHider } from './done-button-hider.js';
+
 export default function uploadcareField(config) {
     if (!window._initializedUploadcareContexts) {
         window._initializedUploadcareContexts = new Set();
@@ -24,6 +26,7 @@ export default function uploadcareField(config) {
         stateHasBeenInitialized: false,
         isStateWatcherActive: false,
         isLocalUpdate: false,
+        doneButtonHider: null,
 
         init() {            
             if (this.isContextAlreadyInitialized()) return;
@@ -32,6 +35,7 @@ export default function uploadcareField(config) {
             this.applyTheme();
             this.initUploadcare();
             this.setupThemeObservers();
+            this.setupDoneButtonObserver();
         },
 
         isContextAlreadyInitialized() {
@@ -528,6 +532,20 @@ export default function uploadcareField(config) {
                 }
                 return typeof file === 'object' ? file.cdnUrl : file;
             });
+        },
+
+        setupDoneButtonObserver() {
+            const wrapper = this.$el.closest('.uploadcare-wrapper');
+            if (wrapper) {
+                this.doneButtonHider = new DoneButtonHider(wrapper);
+            }
+        },
+
+        destroy() {
+            if (this.doneButtonHider) {
+                this.doneButtonHider.destroy();
+                this.doneButtonHider = null;
+            }
         }
     };
 }

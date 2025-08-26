@@ -35,8 +35,7 @@ body .uploadcare-wrapper:not(.single-source) uc-file-uploader-inline .uc-start-f
     isolation: isolate;
 }
 
-.uploadcare-wrapper :where(.uc-done-btn,
-    .uc-primary-btn,
+.uploadcare-wrapper :where(.uc-primary-btn,
     .uc-file-preview,
     .uc-dropzone) {
     all: revert;
@@ -87,7 +86,15 @@ body .uploadcare-wrapper:not(.single-source) uc-file-uploader-inline .uc-start-f
     display: none !important;
 }
 
-.uc-done-btn {
+/* Aggressively hide the Done button - must be at the end to override Uploadcare styles */
+.uploadcare-wrapper .uc-done-btn,
+.uploadcare-wrapper button.uc-done-btn,
+.uploadcare-wrapper .uc-toolbar .uc-done-btn,
+.uploadcare-wrapper .uc-toolbar button.uc-done-btn,
+.uc-done-btn,
+button.uc-done-btn,
+.uc-toolbar .uc-done-btn,
+.uc-toolbar button.uc-done-btn {
     display: none !important;
     visibility: hidden !important;
     opacity: 0 !important;
@@ -96,4 +103,12 @@ body .uploadcare-wrapper:not(.single-source) uc-file-uploader-inline .uc-start-f
     width: 0 !important;
     height: 0 !important;
     overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+    color: transparent !important;
+    font-size: 0 !important;
+    line-height: 0 !important;
 }

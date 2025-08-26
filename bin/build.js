@@ -45,6 +45,6 @@ const defaultOptions = {
 
 compile({
     ...defaultOptions,
-    entryPoints: ['./resources/js/index.js'],
+    entryPoints: ['./resources/js/components/uploadcare.js'],
     outfile: './resources/dist/filament-uploadcare-field.js',
 })
