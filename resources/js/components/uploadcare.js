@@ -262,10 +262,18 @@ export default function uploadcareField(config) {
                     return;
                 }
                 
-                try {
-                    api.addFileFromCdnUrl(url);
-                } catch (e) {
-                    console.error(`Failed to add file ${index} with URL ${url}:`, e);
+                const uuid = this.extractUuidFromUrl(url);
+                if (uuid && typeof api.addFileFromUuid === 'function') {
+                    try {
+                        console.log(`Adding file ${index} with UUID:`, uuid);
+                        api.addFileFromUuid(uuid);
+                    } catch (e) {
+                        console.error(`Failed to add file ${index} with UUID ${uuid}:`, e);
+                    }
+                } else if (!uuid) {
+                    console.error(`Could not extract UUID from URL: ${url}`);
+                } else {
+                    console.error(`addFileFromUuid method not available on API`);
                 }
             };
             
@@ -546,6 +554,24 @@ export default function uploadcareField(config) {
                 this.doneButtonHider.destroy();
                 this.doneButtonHider = null;
             }
+        },
+
+        extractUuidFromUrl(url) {
+            if (!url || typeof url !== 'string') {
+                return null;
+            }
+            
+            const uuidMatch = url.match(/\/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})(?:\/|$)/i);
+            
+            if (uuidMatch && uuidMatch[1]) {
+                return uuidMatch[1];
+            }
+            
+            if (typeof url === 'object' && url.uuid) {
+                return url.uuid;
+            }
+            
+            return null;
         }
     };
 }
