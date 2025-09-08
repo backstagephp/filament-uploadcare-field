@@ -1,3 +1,4 @@
+{{-- When any field has the `live` option set, the Str::random() might cause render issues (re-rendering) --}}
 <div wire:key="uploadcare-wrapper-{{ $getStatePath() }}-{{ \Illuminate\Support\Str::random() }}">
     <x-dynamic-component :component="$getFieldWrapperView()" :field="$field">
         @php
