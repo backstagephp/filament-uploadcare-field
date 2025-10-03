@@ -322,6 +322,8 @@ export default function uploadcareField(config) {
                 if (normalizedNewValue !== normalizedUploadedFiles) {
                     if (newValue && newValue !== '[]' && newValue !== '""') {
                         this.uploadedFiles = newValue;
+                        // Don't trigger another state update when we're just syncing
+                        this.isLocalUpdate = true;
                     }
                 }
             });
@@ -408,7 +410,7 @@ export default function uploadcareField(config) {
                     } catch (error) {
                         console.error('Error updating state after upload:', error);
                     }
-                }, 100); // 100ms debounce
+                }, this.isMultiple ? 200 : 100); // Longer debounce for multiple files
             };
         },
 
@@ -530,6 +532,13 @@ export default function uploadcareField(config) {
                 this.uploadedFiles = newState;
                 this.isLocalUpdate = true;
                 this.state = this.uploadedFiles;
+                
+                // Add a small delay to prevent rapid state updates during multiple file uploads
+                if (this.isMultiple && files.length > 1) {
+                    this.$nextTick(() => {
+                        this.isLocalUpdate = false;
+                    });
+                }
             }
         },
 
