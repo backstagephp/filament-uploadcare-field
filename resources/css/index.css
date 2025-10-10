@@ -83,6 +83,64 @@ body .uploadcare-wrapper:not(.single-source) uc-file-uploader-inline .uc-start-f
     --uc-simple-btn-foreground-dark: rgb(255 255 255);
 }
 
+/* Dark mode text and icon visibility improvements */
+.uc-dark .uc-dropzone {
+    color: rgb(229 229 229) !important;
+    border-color: rgb(64 64 64) !important;
+}
+
+.uc-dark .uc-dropzone .uc-content {
+    color: rgb(229 229 229) !important;
+}
+
+.uc-dark .uc-dropzone .uc-icon {
+    color: rgb(161 161 161) !important;
+    fill: rgb(161 161 161) !important;
+}
+
+.uc-dark .uc-dropzone .uc-text {
+    color: rgb(156 156 156) !important;
+}
+
+.uc-dark .uc-dropzone .uc-button {
+    color: rgb(229 229 229) !important;
+    background-color: rgb(55 55 55) !important;
+    border-color: rgb(64 64 64) !important;
+}
+
+.uc-dark .uc-dropzone .uc-button:hover {
+    background-color: rgb(75 75 75) !important;
+    color: rgb(255 255 255) !important;
+}
+
+/* Ensure upload area text is visible */
+.uc-dark .uc-start-from .uc-content {
+    color: rgb(229 229 229) !important;
+}
+
+.uc-dark .uc-start-from .uc-icon {
+    color: rgb(161 161 161) !important;
+    fill: rgb(161 161 161) !important;
+}
+
+.uc-dark .uc-start-from .uc-text {
+    color: rgb(156 156 156) !important;
+}
+
+/* File uploader specific styling */
+.uc-dark uc-file-uploader-regular .uc-dropzone,
+.uc-dark uc-file-uploader-inline .uc-dropzone {
+    background-color: rgb(36 36 36) !important;
+    border: 2px dashed rgb(64 64 64) !important;
+    color: rgb(229 229 229) !important;
+}
+
+.uc-dark uc-file-uploader-regular .uc-dropzone:hover,
+.uc-dark uc-file-uploader-inline .uc-dropzone:hover {
+    border-color: rgb(161 161 161) !important;
+    background-color: rgb(45 45 45) !important;
+}
+
 .uploadcare-wrapper uc-form-input {
     display: none !important;
 }
