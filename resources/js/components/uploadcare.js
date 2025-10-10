@@ -27,6 +27,7 @@ export default function uploadcareField(config) {
         isStateWatcherActive: false,
         isLocalUpdate: false,
         doneButtonHider: null,
+        documentClassObserver: null,
 
         init() {            
             if (this.isContextAlreadyInitialized()) return;
@@ -48,22 +49,36 @@ export default function uploadcareField(config) {
 
         applyTheme() {
             const theme = this.getCurrentTheme();
+            console.log('Uploadcare theme change detected:', theme);
             const uploaders = document.querySelectorAll(`uc-file-uploader-${this.uploaderStyle}`);
-            uploaders.forEach(uploader => uploader.classList.add(`uc-${theme}`));
+            uploaders.forEach(uploader => {
+                // Remove existing theme classes
+                uploader.classList.remove('uc-dark', 'uc-light');
+                // Add the current theme class
+                uploader.classList.add(`uc-${theme}`);
+            });
         },
 
         getCurrentTheme() {
-            const userTheme = localStorage.getItem('theme');
-            return userTheme === 'system' 
-                ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
-                : userTheme;
+            // First check if document has dark class (most reliable for Filament v4)
+            if (document.documentElement.classList.contains('dark')) {
+                return 'dark';
+            }
+            
+            // If no dark class, it's light theme
+            return 'light';
         },
         
         setupThemeObservers() {
+            // Listen for localStorage changes (theme toggle)
             window.addEventListener('storage', this.handleThemeStorageChange.bind(this));
             
+            // Listen for system theme changes
             const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
             mediaQuery.addEventListener('change', this.handleSystemThemeChange.bind(this));
+            
+            // Watch for dark class changes on document element (Filament v4 approach)
+            this.setupDocumentClassObserver();
         },
 
         handleThemeStorageChange(event) {
@@ -76,6 +91,38 @@ export default function uploadcareField(config) {
             if (localStorage.getItem('theme') === 'system') {
                 this.applyTheme();
             }
+        },
+
+        setupDocumentClassObserver() {
+            // Watch for changes to the document element's class list
+            this.documentClassObserver = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                        // Check if dark class was added or removed
+                        const hasDarkClass = document.documentElement.classList.contains('dark');
+                        const hadDarkClass = mutation.oldValue && mutation.oldValue.includes('dark');
+                        
+                        console.log('Document class change detected:', {
+                            hasDarkClass,
+                            hadDarkClass,
+                            oldValue: mutation.oldValue,
+                            newValue: document.documentElement.className
+                        });
+                        
+                        if (hasDarkClass !== hadDarkClass) {
+                            console.log('Theme change detected, applying theme...');
+                            this.applyTheme();
+                        }
+                    }
+                });
+            });
+
+            // Start observing the document element for class changes
+            this.documentClassObserver.observe(document.documentElement, {
+                attributes: true,
+                attributeOldValue: true,
+                attributeFilter: ['class']
+            });
         },
         
         initUploadcare() {
@@ -562,6 +609,11 @@ export default function uploadcareField(config) {
             if (this.doneButtonHider) {
                 this.doneButtonHider.destroy();
                 this.doneButtonHider = null;
+            }
+            
+            if (this.documentClassObserver) {
+                this.documentClassObserver.disconnect();
+                this.documentClassObserver = null;
             }
         },
 
