@@ -59,11 +59,11 @@ body .uploadcare-wrapper:not(.single-source) uc-file-uploader-inline .uc-start-f
 
 /* Dark theme customization */
 .uc-dark {
-    --uc-background-dark: rgb(17 17 17);
+    --uc-background-dark: rgb(36 36 36);
     --uc-foreground-dark: rgb(229 229 229);
     --uc-primary-oklch-dark: 69% 0.1768 258.4;
     --uc-primary-dark: rgb(161 161 161);
-    --uc-primary-hover-dark: rgb(113 113 113);
+    --uc-primary-hover-dark: rgb(17 17 17);
     --uc-primary-transparent-dark: rgba(161, 161, 161, 0.075);
     --uc-primary-foreground-dark: rgb(255 255 255);
     --uc-secondary-dark: rgba(229, 229, 229, 0.07);
@@ -75,11 +75,70 @@ body .uploadcare-wrapper:not(.single-source) uc-file-uploader-inline .uc-start-f
     --uc-destructive-foreground-dark: rgb(239 68 68);
     --uc-border-dark: rgb(64 64 64);
     --uc-dialog-shadow-dark: 0px 6px 20px rgba(0, 0, 0, 0.25);
+    
 
     /* SimpleBtn */
     --uc-simple-btn-dark: rgb(55 55 55);
     --uc-simple-btn-hover-dark: rgb(75 75 75);
     --uc-simple-btn-foreground-dark: rgb(255 255 255);
+}
+
+/* Dark mode text and icon visibility improvements */
+.uc-dark .uc-dropzone {
+    color: rgb(229 229 229) !important;
+    border-color: rgb(64 64 64) !important;
+}
+
+.uc-dark .uc-dropzone .uc-content {
+    color: rgb(229 229 229) !important;
+}
+
+.uc-dark .uc-dropzone .uc-icon {
+    color: rgb(161 161 161) !important;
+    fill: rgb(161 161 161) !important;
+}
+
+.uc-dark .uc-dropzone .uc-text {
+    color: rgb(156 156 156) !important;
+}
+
+.uc-dark .uc-dropzone .uc-button {
+    color: rgb(229 229 229) !important;
+    background-color: rgb(55 55 55) !important;
+    border-color: rgb(64 64 64) !important;
+}
+
+.uc-dark .uc-dropzone .uc-button:hover {
+    background-color: rgb(75 75 75) !important;
+    color: rgb(255 255 255) !important;
+}
+
+/* Ensure upload area text is visible */
+.uc-dark .uc-start-from .uc-content {
+    color: rgb(229 229 229) !important;
+}
+
+.uc-dark .uc-start-from .uc-icon {
+    color: rgb(161 161 161) !important;
+    fill: rgb(161 161 161) !important;
+}
+
+.uc-dark .uc-start-from .uc-text {
+    color: rgb(156 156 156) !important;
+}
+
+/* File uploader specific styling */
+.uc-dark uc-file-uploader-regular .uc-dropzone,
+.uc-dark uc-file-uploader-inline .uc-dropzone {
+    background-color: rgb(36 36 36) !important;
+    border: 2px dashed rgb(64 64 64) !important;
+    color: rgb(229 229 229) !important;
+}
+
+.uc-dark uc-file-uploader-regular .uc-dropzone:hover,
+.uc-dark uc-file-uploader-inline .uc-dropzone:hover {
+    border-color: rgb(161 161 161) !important;
+    background-color: rgb(45 45 45) !important;
 }
 
 .uploadcare-wrapper uc-form-input {
