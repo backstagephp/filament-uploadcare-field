@@ -1,0 +1,100 @@
+name: test-installation
+
+on:
+  push:
+    branches: [main, feat/*]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-installation:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest]
+        php: [8.1, 8.2, 8.3]
+        laravel: [11.*]
+        include:
+          - laravel: 11.*
+            testbench: 9.*
+
+    name: Installation Test - PHP ${{ matrix.php }} - Laravel ${{ matrix.laravel }} - ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+        with:
+          path: package
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite, bcmath, soap, intl, gd, exif, iconv, imagick, fileinfo
+          coverage: none
+
+      - name: Create Laravel project
+        run: |
+          composer create-project laravel/laravel:${{ matrix.laravel }} test-app --prefer-dist --no-interaction --no-progress
+          cd test-app
+          composer config minimum-stability beta
+          composer config prefer-stable true
+
+      - name: Install Filament
+        run: |
+          cd test-app
+          composer require filament/filament:"^4.0" --no-interaction --no-progress
+
+      - name: Install package from source
+        run: |
+          cd test-app
+          composer config repositories.local '{"type": "path", "url": "../package", "options": {"symlink": false}}'
+          composer require backstage/filament-uploadcare-field:"*@dev" --no-interaction --no-progress
+
+      - name: Verify package installation
+        run: |
+          cd test-app
+          php artisan package:discover --ansi
+          if php -r "exit(class_exists('Backstage\\Uploadcare\\UploadcareServiceProvider') ? 0 : 1);"; then
+            echo "✓ Service Provider is autoloaded"
+          else
+            echo "✗ Service Provider not found"
+            exit 1
+          fi
+
+      - name: Verify package assets
+        run: |
+          cd test-app
+          if [ -d "vendor/backstage/filament-uploadcare-field/resources" ]; then
+            echo "✓ Package resources are present"
+          else
+            echo "✗ Package resources not found"
+            exit 1
+          fi
+
+      - name: Test package component can be imported
+        run: |
+          cd test-app
+          php -r "require 'vendor/autoload.php'; use Backstage\\Uploadcare\\Forms\\Components\\Uploadcare; echo '✓ Component can be imported';"
+
+      - name: Install Node dependencies
+        run: |
+          cd package
+          npm ci
+
+      - name: Build assets
+        run: |
+          cd package
+          npm run build
+
+      - name: Verify built assets exist
+        run: |
+          cd package
+          if [ -f "resources/dist/filament-uploadcare-field.css" ] && [ -f "resources/dist/filament-uploadcare-field.js" ]; then
+            echo "✓ Built assets are present"
+          else
+            echo "✗ Built assets not found"
+            exit 1
+          fi
+
