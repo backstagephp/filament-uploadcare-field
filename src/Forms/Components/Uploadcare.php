@@ -177,7 +177,7 @@ class Uploadcare extends Field
         return $this->maxLocalFileSizeBytes;
     }
 
-    public function cropPreset(string|array $preset): static
+    public function cropPreset(string | array $preset): static
     {
         // Handle array input by converting to comma-separated string
         if (is_array($preset)) {
@@ -208,7 +208,7 @@ class Uploadcare extends Field
     }
 
     // For compatibility with the default Filament File Upload field
-    public function imageEditorAspectRatios(string|array $aspectRatios): static
+    public function imageEditorAspectRatios(string | array $aspectRatios): static
     {
         $this->cropPreset($aspectRatios);
 
