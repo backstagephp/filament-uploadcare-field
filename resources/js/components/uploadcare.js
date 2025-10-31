@@ -49,7 +49,6 @@ export default function uploadcareField(config) {
 
         applyTheme() {
             const theme = this.getCurrentTheme();
-            console.log('Uploadcare theme change detected:', theme);
             const uploaders = document.querySelectorAll(`uc-file-uploader-${this.uploaderStyle}`);
             uploaders.forEach(uploader => {
                 // Remove existing theme classes
@@ -101,16 +100,8 @@ export default function uploadcareField(config) {
                         // Check if dark class was added or removed
                         const hasDarkClass = document.documentElement.classList.contains('dark');
                         const hadDarkClass = mutation.oldValue && mutation.oldValue.includes('dark');
-                        
-                        console.log('Document class change detected:', {
-                            hasDarkClass,
-                            hadDarkClass,
-                            oldValue: mutation.oldValue,
-                            newValue: document.documentElement.className
-                        });
-                        
+
                         if (hasDarkClass !== hadDarkClass) {
-                            console.log('Theme change detected, applying theme...');
                             this.applyTheme();
                         }
                     }
@@ -312,7 +303,6 @@ export default function uploadcareField(config) {
                 const uuid = this.extractUuidFromUrl(url);
                 if (uuid && typeof api.addFileFromUuid === 'function') {
                     try {
-                        console.log(`Adding file ${index} with UUID:`, uuid);
                         api.addFileFromUuid(uuid);
                     } catch (e) {
                         console.error(`Failed to add file ${index} with UUID ${uuid}:`, e);
@@ -566,20 +556,20 @@ export default function uploadcareField(config) {
         updateState(files) {
             const finalFiles = this.formatFilesForState(files);
             const newState = JSON.stringify(finalFiles);
-            
+
             // More robust comparison - parse and compare the actual content
             const currentFiles = this.getCurrentFiles();
             const currentStateNormalized = JSON.stringify(this.formatFilesForState(currentFiles));
             const newStateNormalized = JSON.stringify(this.formatFilesForState(finalFiles));
-            
+
             const hasActuallyChanged = currentStateNormalized !== newStateNormalized;
-            
+
             // Only update if the state actually changed
             if (hasActuallyChanged) {
                 this.uploadedFiles = newState;
                 this.isLocalUpdate = true;
                 this.state = this.uploadedFiles;
-                
+
                 // Add a small delay to prevent rapid state updates during multiple file uploads
                 if (this.isMultiple && files.length > 1) {
                     this.$nextTick(() => {

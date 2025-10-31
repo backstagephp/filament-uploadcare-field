@@ -141,6 +141,12 @@ body .uploadcare-wrapper:not(.single-source) uc-file-uploader-inline .uc-start-f
     background-color: rgb(45 45 45) !important;
 }
 
+/* File preview inner container in dark mode */
+.uc-dark .uc-inner {
+    background-color: rgb(24 24 24) !important;
+    border-color: rgb(64 64 64) !important;
+}
+
 .uploadcare-wrapper uc-form-input {
     display: none !important;
 }
