@@ -77,6 +77,13 @@ class Uploadcare extends Field
         return $this;
     }
 
+    public function image(bool $image = true): static
+    {
+        $this->imgOnly = $image;
+
+        return $this;
+    }
+
     public function uploaderStyle(Style $style = Style::INLINE): static
     {
         $this->uploaderStyle = $style;
@@ -162,13 +169,40 @@ class Uploadcare extends Field
         return $this->maxLocalFileSizeBytes;
     }
 
-    public function cropPreset(string $preset): static
+    public function cropPreset(string|array $preset): static
     {
-        if (! preg_match('/^\d+:\d+$/', $preset) && $preset !== '') {
-            throw new InvalidArgumentException('Crop preset must be in format "width:height" or empty string for free crop.');
+        // Handle array input by converting to comma-separated string
+        if (is_array($preset)) {
+            $preset = implode(', ', $preset);
+        }
+
+        if ($preset === '') {
+            $this->cropPreset = $preset;
+
+            return $this;
+        }
+
+        // Split by comma and trim each value
+        $presets = array_map('trim', explode(',', $preset));
+
+        foreach ($presets as $value) {
+            // Allow 'free' or aspect ratio format like '1:1', '16:9', or '1.91:1' (supports decimals)
+            if ($value !== 'free' && ! preg_match('/^\d+(?:\.\d+)?:\d+(?:\.\d+)?$/', $value)) {
+                throw new InvalidArgumentException(
+                    'Crop preset must be empty string, "free", aspect ratio (e.g., "1:1", "1.91:1"), comma-separated string (e.g., "free, 1:1, 16:9"), or array (e.g., ["free", "1:1", "16:9"]).'
+                );
+            }
         }
 
         $this->cropPreset = $preset;
+
+        return $this;
+    }
+
+    // For compatibility with the default Filament File Upload field
+    public function imageEditorAspectRatios(string|array $aspectRatios): static
+    {
+        $this->cropPreset($aspectRatios);
 
         return $this;
     }
