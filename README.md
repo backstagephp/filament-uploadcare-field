@@ -134,7 +134,25 @@ Uploadcare::make('images')
     ->imagesOnly();
 ```
 
-#### `accept(array|string $accept)`
+#### `image(bool $image = true)`
+
+Alias for `imagesOnly()`:
+
+```php
+Uploadcare::make('images')
+    ->image(); // Same as ->imagesOnly()
+```
+
+#### `accept(array|string $accept)` (deprecated)
+
+Specify allowed file types:
+
+```php
+Uploadcare::make('documents')
+    ->accept(['image/*', 'application/pdf']);
+```
+
+#### `acceptedFileTypes(array|string $acceptedFileTypes)` (replaces `accept`)
 
 Specify allowed file types:
 
@@ -170,13 +188,39 @@ Uploadcare::make('images')
     ->maxLocalFileSize('10MB'); // Supports B, KB, MB, GB, TB
 ```
 
-#### `cropPreset(string $preset)`
+#### `cropPreset(string|array $preset)`
 
-Set the crop aspect ratio for images. The preset should be in format "width:height" (e.g., "1:1" for square, "16:9" for widescreen). Use an empty string for free crop:
+Set the crop aspect ratio(s) for images. Accepts a single preset, comma-separated string, or array of presets. Each preset should be in format "width:height" (e.g., "1:1" for square, "16:9" for widescreen), "free" for unconstrained cropping, or an empty string to disable cropping. Decimal values are supported (e.g., "1.91:1"):
+
+```php
+// Single preset
+Uploadcare::make('images')
+    ->cropPreset('1:1'); // Square crop only
+
+// Multiple presets (comma-separated string)
+Uploadcare::make('images')
+    ->cropPreset('free, 1:1, 16:9'); // Free, square, or widescreen
+
+// Multiple presets (array)
+Uploadcare::make('images')
+    ->cropPreset(['free', '1:1', '16:9', '4:3']);
+
+// Free crop only
+Uploadcare::make('images')
+    ->cropPreset('free');
+
+// Disable cropping
+Uploadcare::make('images')
+    ->cropPreset('');
+```
+
+#### `imageEditorAspectRatios(string|array $aspectRatios)`
+
+Alias for `cropPreset()` to maintain compatibility with Filament's default FileUpload field:
 
 ```php
 Uploadcare::make('images')
-    ->cropPreset('1:1'); // Square crop
+    ->imageEditorAspectRatios(['1:1', '16:9', '4:3']);
 ```
 
 #### `removeCopyright(bool $remove = true)`
