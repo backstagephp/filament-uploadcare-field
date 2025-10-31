@@ -28,7 +28,7 @@ class Uploadcare extends Field
         'local',
     ];
 
-    protected array $accept = [
+    protected array $acceptedFileTypes = [
         'image/*',
         'video/*',
         'audio/*',
@@ -145,16 +145,24 @@ class Uploadcare extends Field
         return implode(',', $this->sourceList);
     }
 
+    /** @deprecated use acceptedFileTypes() instead */
     public function accept(array | string $accept): static
     {
-        $this->accept = is_array($accept) ? $accept : [$accept];
+        $this->acceptedFileTypes = is_array($accept) ? $accept : [$accept];
 
         return $this;
     }
 
-    public function getAccept(): string
+    public function acceptedFileTypes(array | string $acceptedFileTypes): static
     {
-        return implode(',', $this->accept);
+        $this->acceptedFileTypes = is_array($acceptedFileTypes) ? $acceptedFileTypes : [$acceptedFileTypes];
+
+        return $this;
+    }
+
+    public function getAcceptedFileTypes(): string
+    {
+        return implode(',', $this->acceptedFileTypes);
     }
 
     public function maxLocalFileSizeBytes(int $bytes): static

@@ -143,7 +143,16 @@ Uploadcare::make('images')
     ->image(); // Same as ->imagesOnly()
 ```
 
-#### `accept(array|string $accept)`
+#### `accept(array|string $accept)` (deprecated)
+
+Specify allowed file types:
+
+```php
+Uploadcare::make('documents')
+    ->accept(['image/*', 'application/pdf']);
+```
+
+#### `acceptedFileTypes(array|string $acceptedFileTypes)` (replaces `accept`)
 
 Specify allowed file types:
 
