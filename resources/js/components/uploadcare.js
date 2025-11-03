@@ -1,3 +1,5 @@
+import { DoneButtonHider } from './done-button-hider.js';
+
 export default function uploadcareField(config) {
     if (!window._initializedUploadcareContexts) {
         window._initializedUploadcareContexts = new Set()
@@ -24,6 +26,8 @@ export default function uploadcareField(config) {
         stateHasBeenInitialized: false,
         isStateWatcherActive: false,
         isLocalUpdate: false,
+        doneButtonHider: null,
+        documentClassObserver: null,
 
         init() {
             if (this.isContextAlreadyInitialized()) {
@@ -33,6 +37,7 @@ export default function uploadcareField(config) {
             this.applyTheme();
             this.initUploadcare();
             this.setupThemeObservers();
+            this.setupDoneButtonObserver();
         },
 
         isContextAlreadyInitialized() {
@@ -47,33 +52,35 @@ export default function uploadcareField(config) {
 
         applyTheme() {
             const theme = this.getCurrentTheme();
-            const uploaders = this.$el.querySelectorAll(
-                `uc-file-uploader-${this.uploaderStyle}`,
-            )
-            uploaders.forEach((uploader) =>
-                uploader.classList.add(`uc-${theme}`),
-            );
+            const uploaders = document.querySelectorAll(`uc-file-uploader-${this.uploaderStyle}`);
+            uploaders.forEach(uploader => {
+                // Remove existing theme classes
+                uploader.classList.remove('uc-dark', 'uc-light');
+                // Add the current theme class
+                uploader.classList.add(`uc-${theme}`);
+            });
         },
 
         getCurrentTheme() {
-            const userTheme = localStorage.getItem('theme');
-            return userTheme === 'system'
-                ? window.matchMedia('(prefers-color-scheme: dark)').matches
-                    ? 'dark'
-                    : 'light'
-                : userTheme;
+            // First check if document has dark class (most reliable for Filament v4)
+            if (document.documentElement.classList.contains('dark')) {
+                return 'dark';
+            }
+            
+            // If no dark class, it's light theme
+            return 'light';
         },
 
         setupThemeObservers() {
-            window.addEventListener(
-                'storage',
-                this.handleThemeStorageChange.bind(this),
-            );
-            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
-            mediaQuery.addEventListener(
-                'change',
-                this.handleSystemThemeChange.bind(this),
-            );
+            // Listen for localStorage changes (theme toggle)
+            window.addEventListener('storage', this.handleThemeStorageChange.bind(this));
+            
+            // Listen for system theme changes
+            const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            mediaQuery.addEventListener('change', this.handleSystemThemeChange.bind(this));
+            
+            // Watch for dark class changes on document element (Filament v4 approach)
+            this.setupDocumentClassObserver();
         },
 
         handleThemeStorageChange(event) {
@@ -88,6 +95,30 @@ export default function uploadcareField(config) {
             }
         },
 
+        setupDocumentClassObserver() {
+            // Watch for changes to the document element's class list
+            this.documentClassObserver = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                        // Check if dark class was added or removed
+                        const hasDarkClass = document.documentElement.classList.contains('dark');
+                        const hadDarkClass = mutation.oldValue && mutation.oldValue.includes('dark');
+
+                        if (hasDarkClass !== hadDarkClass) {
+                            this.applyTheme();
+                        }
+                    }
+                });
+            });
+
+            // Start observing the document element for class changes
+            this.documentClassObserver.observe(document.documentElement, {
+                attributes: true,
+                attributeOldValue: true,
+                attributeFilter: ['class']
+            });
+        },
+        
         initUploadcare() {
             if (this.removeEventListeners) {
                 this.removeEventListeners();
@@ -200,6 +231,102 @@ export default function uploadcareField(config) {
             if (!this.initialState) {
                 return null;
             }
+            
+            // Handle all other cases
+            return safeParse(this.initialState);
+        },
+
+        addFilesFromInitialState(api, parsedState) {
+            // Ensure parsedState is a regular array, not a Proxy
+            let filesArray = parsedState;
+            if (parsedState && typeof parsedState === 'object' && !Array.isArray(parsedState)) {
+                // If it's a Proxy object, try to convert it to a regular array
+                try {
+                    filesArray = Array.from(parsedState);
+                } catch (e) {
+                    console.warn('Failed to convert Proxy to array:', e);
+                    filesArray = [parsedState];
+                }
+            } else if (!Array.isArray(parsedState)) {
+                filesArray = [parsedState];
+            }
+            
+            // If filesArray is an array with one element that is also an array, flatten it
+            if (Array.isArray(filesArray) && filesArray.length === 1 && Array.isArray(filesArray[0])) {
+                filesArray = filesArray[0];
+            }
+            
+            // Handle case where filesArray contains JSON strings that need to be parsed
+            if (Array.isArray(filesArray) && filesArray.length === 1 && typeof filesArray[0] === 'string') {
+                try {
+                    const parsed = JSON.parse(filesArray[0]);
+                    filesArray = Array.isArray(parsed) ? parsed : [parsed];
+                } catch (e) {
+                    console.warn('Failed to parse JSON string from filesArray[0]:', e);
+                }
+            }
+            
+            // Ensure we have an array of individual file objects
+            if (!Array.isArray(filesArray)) {
+                filesArray = [filesArray];
+            }
+            
+            const addFile = (item, index = 0) => {
+                if (!item) return;
+                
+                // If item is an array, process each element
+                if (Array.isArray(item)) {
+                    item.forEach((subItem, subIndex) => {
+                        addFile(subItem, `${index}.${subIndex}`);
+                    });
+                    return;
+                }
+                
+                // If item is a string, try to parse it as JSON
+                if (typeof item === 'string') {
+                    try {
+                        const parsedItem = JSON.parse(item);
+                        addFile(parsedItem, index);
+                        return;
+                    } catch (e) {
+                        console.warn(`Failed to parse string item ${index} as JSON:`, e);
+                    }
+                }
+                
+                const url = typeof item === 'object' ? item.cdnUrl : item;
+                
+                if (!url || !this.isValidUrl(url)) {
+                    console.warn(`Invalid URL for file ${index}:`, url);
+                    return;
+                }
+                
+                const uuid = this.extractUuidFromUrl(url);
+                if (uuid && typeof api.addFileFromUuid === 'function') {
+                    try {
+                        api.addFileFromUuid(uuid);
+                    } catch (e) {
+                        console.error(`Failed to add file ${index} with UUID ${uuid}:`, e);
+                    }
+                } else if (!uuid) {
+                    console.error(`Could not extract UUID from URL: ${url}`);
+                } else {
+                    console.error(`addFileFromUuid method not available on API`);
+                }
+            };
+            
+            // Process each file in the array
+            filesArray.forEach(addFile);
+
+            // Store the formatted state to match what will be returned
+            const formattedState = this.formatFilesForState(filesArray);
+            this.uploadedFiles = JSON.stringify(formattedState);
+            
+            // Set the initial state to match the formatted version
+            this.initialState = this.uploadedFiles;
+        },
+
+        isValidUrl(string) {
+            if (!string || typeof string !== 'string') return false;
             try {
                 const parsed =
                     typeof this.initialState === 'string'
@@ -285,8 +412,22 @@ export default function uploadcareField(config) {
                     this.stateHasBeenInitialized = true;
                     return;
                 }
-                if (newValue !== this.uploadedFiles) {
-                    this.uploadedFiles = newValue;
+                
+                // Skip if the new value is empty and we don't have any files
+                if ((!newValue || newValue === '[]' || newValue === '""') && !this.uploadedFiles) {
+                    return;
+                }
+                
+                // Normalize both values for comparison
+                const normalizedNewValue = this.normalizeStateValue(newValue);
+                const normalizedUploadedFiles = this.normalizeStateValue(this.uploadedFiles);
+                
+                if (normalizedNewValue !== normalizedUploadedFiles) {
+                    if (newValue && newValue !== '[]' && newValue !== '""') {
+                        this.uploadedFiles = newValue;
+                        // Don't trigger another state update when we're just syncing
+                        this.isLocalUpdate = true;
+                    }
                 }
             });
         },
@@ -356,8 +497,7 @@ export default function uploadcareField(config) {
                             new CustomEvent('form-processing-finished'),
                         )
                     }
-                } catch (error) {
-                }
+                }, this.isMultiple ? 200 : 100); // Longer debounce for multiple files
             };
         },
 
@@ -460,27 +600,27 @@ export default function uploadcareField(config) {
         },
 
         updateState(files) {
-            const finalFiles = this.formatFilesForState(files)
-            const newUploadedFiles = JSON.stringify(finalFiles)
-            
-            // Only update if the files have actually changed
-            if (newUploadedFiles !== this.uploadedFiles) {
-                this.uploadedFiles = newUploadedFiles
-                this.isLocalUpdate = true
-                
-                const normalizeForComparison = (str) => {
-                    try {
-                        return JSON.stringify(JSON.parse(str));
-                    } catch (e) {
-                        return str;
-                    }
-                };
-                const normalizedUploadedFiles = normalizeForComparison(
-                    this.uploadedFiles,
-                );
-                const normalizedState = normalizeForComparison(this.state)
-                if (normalizedUploadedFiles !== normalizedState) {
-                    this.$wire.set(this.statePath, this.uploadedFiles)
+            const finalFiles = this.formatFilesForState(files);
+            const newState = JSON.stringify(finalFiles);
+
+            // More robust comparison - parse and compare the actual content
+            const currentFiles = this.getCurrentFiles();
+            const currentStateNormalized = JSON.stringify(this.formatFilesForState(currentFiles));
+            const newStateNormalized = JSON.stringify(this.formatFilesForState(finalFiles));
+
+            const hasActuallyChanged = currentStateNormalized !== newStateNormalized;
+
+            // Only update if the state actually changed
+            if (hasActuallyChanged) {
+                this.uploadedFiles = newState;
+                this.isLocalUpdate = true;
+                this.state = this.uploadedFiles;
+
+                // Add a small delay to prevent rapid state updates during multiple file uploads
+                if (this.isMultiple && files.length > 1) {
+                    this.$nextTick(() => {
+                        this.isLocalUpdate = false;
+                    });
                 }
             }
         },
@@ -496,6 +636,41 @@ export default function uploadcareField(config) {
             });
         },
 
+        setupDoneButtonObserver() {
+            const wrapper = this.$el.closest('.uploadcare-wrapper');
+            if (wrapper) {
+                this.doneButtonHider = new DoneButtonHider(wrapper);
+            }
+        },
 
+        destroy() {
+            if (this.doneButtonHider) {
+                this.doneButtonHider.destroy();
+                this.doneButtonHider = null;
+            }
+            
+            if (this.documentClassObserver) {
+                this.documentClassObserver.disconnect();
+                this.documentClassObserver = null;
+            }
+        },
+
+        extractUuidFromUrl(url) {
+            if (!url || typeof url !== 'string') {
+                return null;
+            }
+            
+            const uuidMatch = url.match(/\/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})(?:\/|$)/i);
+            
+            if (uuidMatch && uuidMatch[1]) {
+                return uuidMatch[1];
+            }
+            
+            if (typeof url === 'object' && url.uuid) {
+                return url.uuid;
+            }
+            
+            return null;
+        }
     };
 }

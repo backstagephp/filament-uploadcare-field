@@ -19,13 +19,13 @@ jobs:
         include:
           - laravel: 11.*
             testbench: 9.*
-            carbon: ^2.72.2
+            carbon: ^2.72.6
 
     name: P${{ matrix.php }} - L${{ matrix.laravel }} - ${{ matrix.stability }} - ${{ matrix.os }}
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup PHP
         uses: shivammathur/setup-php@v2

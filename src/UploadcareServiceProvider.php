@@ -6,7 +6,6 @@ use Backstage\Uploadcare\Testing\TestsUploadcare;
 use Filament\Support\Assets\AlpineComponent;
 use Filament\Support\Assets\Asset;
 use Filament\Support\Assets\Css;
-use Filament\Support\Assets\Js;
 use Filament\Support\Facades\FilamentAsset;
 use Filament\Support\Facades\FilamentIcon;
 use Filament\Support\Facades\FilamentView;
@@ -153,10 +152,8 @@ class UploadcareServiceProvider extends PackageServiceProvider
     protected function getAssets(): array
     {
         return [
-            AlpineComponent::make('uploadcare', __DIR__ . '/../resources/js/components/uploadcare.js'),
+            AlpineComponent::make('uploadcare', __DIR__ . '/../resources/dist/filament-uploadcare-field.js'),
             Css::make('filament-uploadcare-field-styles', __DIR__ . '/../resources/dist/filament-uploadcare-field.css'),
-            Js::make('filament-uploadcare-field-scripts', __DIR__ . '/../resources/dist/filament-uploadcare-field.js')
-                ->module(),
         ];
     }
 
