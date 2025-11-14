@@ -1,0 +1,74 @@
+{
+    "name": "backstage/filament-uploadcare-field",
+    "description": "Uploadcare FileUpload component for Filament Forms",
+    "keywords": [
+        "backstage",
+        "laravel",
+        "filament-uploadcare-field"
+    ],
+    "homepage": "https://github.com/backstagephp/filament-uploadcare-field",
+    "support": {
+        "issues": "https://github.com/backstagephp/filament-uploadcare-field/issues",
+        "source": "https://github.com/backstagephp/filament-uploadcare-field"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Baspa",
+            "email": "hello@baspa.dev",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^8.1|^8.2|^8.3",
+        "filament/filament": "^4.0",
+        "filament/forms": "^4.0",
+        "spatie/laravel-package-tools": "^1.15.0"
+    },
+    "require-dev": {
+        "larastan/larastan": "^3.0",
+        "laravel/pint": "^1.0",
+        "nunomaduro/collision": "^8.8.0",
+        "orchestra/testbench": "^9.0|^10.0",
+        "pestphp/pest": "^3.7",
+        "pestphp/pest-plugin-arch": "^3.1.0",
+        "pestphp/pest-plugin-laravel": "^3.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Backstage\\Uploadcare\\": "src/",
+            "Backstage\\Uploadcare\\Database\\Factories\\": "database/factories/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Backstage\\Uploadcare\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "post-autoload-dump": "@php ./vendor/bin/testbench package:discover --ansi",
+        "analyse": "vendor/bin/phpstan analyse",
+        "test": "vendor/bin/pest",
+        "test-coverage": "vendor/bin/pest --coverage",
+        "format": "vendor/bin/pint"
+    },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "phpstan/extension-installer": true
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Backstage\\Uploadcare\\UploadcareServiceProvider"
+            ],
+            "aliases": {
+                "Uploadcare": "Backstage\\Uploadcare\\Facades\\Uploadcare"
+            }
+        }
+    },
+    "minimum-stability": "beta",
+    "prefer-stable": true
+}
