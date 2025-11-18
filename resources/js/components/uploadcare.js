@@ -273,7 +273,7 @@ export default function uploadcareField(config) {
             
             const addFile = (item, index = 0) => {
                 if (!item) return;
-                
+
                 // If item is an array, process each element
                 if (Array.isArray(item)) {
                     item.forEach((subItem, subIndex) => {
@@ -281,7 +281,7 @@ export default function uploadcareField(config) {
                     });
                     return;
                 }
-                
+
                 // If item is a string, try to parse it as JSON
                 if (typeof item === 'string') {
                     try {
@@ -292,18 +292,26 @@ export default function uploadcareField(config) {
                         console.warn(`Failed to parse string item ${index} as JSON:`, e);
                     }
                 }
-                
+
                 const url = typeof item === 'object' ? item.cdnUrl : item;
-                
+                const cdnUrlModifiers = typeof item === 'object' ? item.cdnUrlModifiers : null;
+
                 if (!url || !this.isValidUrl(url)) {
                     console.warn(`Invalid URL for file ${index}:`, url);
                     return;
                 }
-                
+
                 const uuid = this.extractUuidFromUrl(url);
                 if (uuid && typeof api.addFileFromUuid === 'function') {
                     try {
-                        api.addFileFromUuid(uuid);
+                        // If cdnUrlModifiers exist, use addFileFromCdnUrl with the full URL including modifiers
+                        if (cdnUrlModifiers && typeof api.addFileFromCdnUrl === 'function') {
+                            const baseUrl = url.split('/-/')[0]; // Get base URL without any modifiers
+                            const fullUrl = baseUrl + '/' + cdnUrlModifiers;
+                            api.addFileFromCdnUrl(fullUrl);
+                        } else {
+                            api.addFileFromUuid(uuid);
+                        }
                     } catch (e) {
                         console.error(`Failed to add file ${index} with UUID ${uuid}:`, e);
                     }

@@ -92,17 +92,35 @@ export default function uploadcareField(config) {
                 // Initialize with existing state if available
                 if (this.initialState) {
                     try {
-                        const parsedState = typeof this.initialState === 'string' ? 
+                        const parsedState = typeof this.initialState === 'string' ?
                             JSON.parse(this.initialState) : this.initialState;
-                        
+
                         if (Array.isArray(parsedState)) {
                             parsedState.forEach(item => {
                                 const url = typeof item === 'object' ? item.cdnUrl : item;
-                                api.addFileFromCdnUrl(url);
+                                const cdnUrlModifiers = typeof item === 'object' ? item.cdnUrlModifiers : null;
+
+                                // If cdnUrlModifiers exist, use the full URL with modifiers
+                                if (cdnUrlModifiers) {
+                                    const baseUrl = url.split('/-/')[0]; // Get base URL without any modifiers
+                                    const fullUrl = baseUrl + '/' + cdnUrlModifiers;
+                                    api.addFileFromCdnUrl(fullUrl);
+                                } else {
+                                    api.addFileFromCdnUrl(url);
+                                }
                             });
                         } else {
                             const url = typeof parsedState === 'object' ? parsedState.cdnUrl : parsedState;
-                            api.addFileFromCdnUrl(url);
+                            const cdnUrlModifiers = typeof parsedState === 'object' ? parsedState.cdnUrlModifiers : null;
+
+                            // If cdnUrlModifiers exist, use the full URL with modifiers
+                            if (cdnUrlModifiers) {
+                                const baseUrl = url.split('/-/')[0]; // Get base URL without any modifiers
+                                const fullUrl = baseUrl + '/' + cdnUrlModifiers;
+                                api.addFileFromCdnUrl(fullUrl);
+                            } else {
+                                api.addFileFromCdnUrl(url);
+                            }
                         }
 
                         this.uploadedFiles = JSON.stringify(parsedState);
