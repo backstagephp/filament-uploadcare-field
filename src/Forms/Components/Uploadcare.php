@@ -343,6 +343,43 @@ class Uploadcare extends Field
         return $this->transformUrls($value, 'https://ucarecdn.com', $this->getDbCdnCname());
     }
 
+    /**
+     * Get the normalized locale for Uploadcare.
+     * Uploadcare supports: de, en, es, fr, he, it, nl, pl, pt, ru, tr, uk, zh-TW, zh
+     */
+    public function getLocaleName(): string
+    {
+        $locale = app()->getLocale();
+
+        // Normalize locale: convert 'en_US' or 'en-US' to 'en', but keep 'zh-TW' as is
+        $normalized = str_replace('_', '-', $locale);
+
+        // Handle special cases
+        if (str_starts_with($normalized, 'zh')) {
+            // Check if it's zh-TW (Traditional Chinese)
+            if (str_contains($normalized, 'TW') || str_contains($normalized, 'tw')) {
+                return 'zh-TW';
+            }
+
+            // Otherwise return 'zh' (Simplified Chinese)
+            return 'zh';
+        }
+
+        // Extract base language code (e.g., 'en' from 'en-US' or 'en_US')
+        $baseLocale = explode('-', $normalized)[0];
+
+        // List of supported Uploadcare locales
+        $supportedLocales = ['de', 'en', 'es', 'fr', 'he', 'it', 'nl', 'pl', 'pt', 'ru', 'tr', 'uk', 'zh-TW', 'zh'];
+
+        // Check if base locale is supported
+        if (in_array($baseLocale, $supportedLocales)) {
+            return $baseLocale;
+        }
+
+        // Fallback to 'en' if locale is not supported
+        return 'en';
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
