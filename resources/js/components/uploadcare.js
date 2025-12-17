@@ -18,7 +18,6 @@ export default function uploadcareField(config) {
         sourceList: config.sourceList,
         uploaderStyle: config.uploaderStyle,
         isWithMetadata: config.isWithMetadata,
-        localeName: config.localeName || 'en',
         uploadedFiles: '',
         ctx: null,
         removeEventListeners: null,
@@ -31,31 +30,11 @@ export default function uploadcareField(config) {
         documentClassObserver: null,
         formInputObserver: null,
 
-        async init() {
-            if (this.isContextAlreadyInitialized()) {
-                return;
-            }
+        init() {            
+            if (this.isContextAlreadyInitialized()) return;
 
             this.markContextAsInitialized();
             this.applyTheme();
-            
-            await this.loadAllLocales();
-            
-            this.setupStateWatcher();
-            
-            this.$el.addEventListener('uploadcare-state-updated', (e) => {
-                const uuid = e.detail.uuid;
-                if (uuid && this.isInitialized) {
-                    this.loadFileFromUuid(uuid);
-                } else if (uuid) {
-                    this.$nextTick(() => {
-                        if (this.isInitialized) {
-                            this.loadFileFromUuid(uuid);
-                        }
-                    });
-                }
-            });
-            
             this.initUploadcare();
             this.setupThemeObservers();
             this.setupDoneButtonObserver();
@@ -67,100 +46,6 @@ export default function uploadcareField(config) {
 
         markContextAsInitialized() {
             window._initializedUploadcareContexts.add(this.uniqueContextName);
-        },
-
-        async loadAllLocales() {
-            if (!window._uploadcareAllLocalesLoaded) {
-                await new Promise((resolve) => {
-                    if (window._uploadcareAllLocalesLoaded) {
-                        resolve();
-                        return;
-                    }
-                    const checkInterval = setInterval(() => {
-                        if (window._uploadcareAllLocalesLoaded) {
-                            clearInterval(checkInterval);
-                            resolve();
-                        }
-                    }, 100);
-                    setTimeout(() => {
-                        clearInterval(checkInterval);
-                        resolve();
-                    }, 5000);
-                });
-            }
-            
-            const supportedLocales = ['de', 'es', 'fr', 'he', 'it', 'nl', 'pl', 'pt', 'ru', 'tr', 'uk', 'zh-TW', 'zh'];
-            document.querySelectorAll('uc-config[data-locale-name]').forEach(config => {
-                const locale = config.getAttribute('data-locale-name');
-                if (locale && supportedLocales.includes(locale) && !config.getAttribute('locale-name')) {
-                    config.setAttribute('locale-name', locale);
-                }
-            });
-        },
-
-        async loadLocale() {
-            if (this.localeName === 'en' || this.localeLoaded) {
-                return;
-            }
-
-            if (window._uploadcareLocales && window._uploadcareLocales.has(this.localeName)) {
-                this.localeLoaded = true;
-                return;
-            }
-
-            if (!window._uploadcareLocales) {
-                window._uploadcareLocales = new Set();
-            }
-
-            const supportedLocales = ['de', 'es', 'fr', 'he', 'it', 'nl', 'pl', 'pt', 'ru', 'tr', 'uk', 'zh-TW', 'zh'];
-            
-            if (!supportedLocales.includes(this.localeName)) {
-                return;
-            }
-
-            try {
-                const localeUrl = `https://cdn.jsdelivr.net/npm/@uploadcare/file-uploader@v1/locales/file-uploader/${this.localeName}.js`;
-                const localeModule = await import(localeUrl);
-                const localeData = localeModule.default || localeModule;
-                
-                const getUC = () => {
-                    const UploaderElement = customElements.get('uc-file-uploader-inline') || 
-                                          customElements.get('uc-file-uploader-regular') || 
-                                          customElements.get('uc-file-uploader-minimal');
-                    
-                    if (UploaderElement && UploaderElement.UC) {
-                        return UploaderElement.UC;
-                    }
-                    
-                    return window.UC;
-                };
-                
-                const registerLocale = () => {
-                    const UC = getUC();
-                    if (UC && typeof UC.defineLocale === 'function') {
-                        UC.defineLocale(this.localeName, localeData);
-                        window._uploadcareLocales.add(this.localeName);
-                        this.localeLoaded = true;
-                        return true;
-                    }
-                    return false;
-                };
-                
-                if (!registerLocale()) {
-                    let attempts = 0;
-                    const maxAttempts = 50;
-                    const checkUC = setInterval(() => {
-                        attempts++;
-                        if (registerLocale()) {
-                            clearInterval(checkUC);
-                        } else if (attempts >= maxAttempts) {
-                            clearInterval(checkUC);
-                        }
-                    }, 100);
-                }
-            } catch (error) {
-                console.error('[Uploadcare Locale JS] Failed to load locale:', this.localeName, error);
-            }
         },
 
         applyTheme() {
@@ -231,6 +116,7 @@ export default function uploadcareField(config) {
 
         initializeUploader(retryCount = 0, maxRetries = 10) {
             if (retryCount >= maxRetries) {
+                console.error('Failed to initialize Uploadcare after maximum retries');
                 return;
             }
 
@@ -282,6 +168,7 @@ export default function uploadcareField(config) {
                     this.isLocalUpdate = true;
                     this.state = this.uploadedFiles;
                 }
+                this.setupStateWatcher();
             });
         },
 
@@ -307,11 +194,13 @@ export default function uploadcareField(config) {
                             try {
                                 parsed = JSON.parse(parsed);
                             } catch (e) {
+                                console.warn('Failed to parse double-encoded JSON:', e);
                             }
                         }
                         
                         return parsed;
                     } catch (e) {
+                        console.warn('Failed to parse string as JSON:', e);
                         return value;
                     }
                 }
@@ -334,6 +223,7 @@ export default function uploadcareField(config) {
                 try {
                     filesArray = Array.from(parsedState);
                 } catch (e) {
+                    console.warn('Failed to convert Proxy to array:', e);
                     filesArray = [parsedState];
                 }
             } else if (!Array.isArray(parsedState)) {
@@ -349,6 +239,7 @@ export default function uploadcareField(config) {
                     const parsed = JSON.parse(filesArray[0]);
                     filesArray = Array.isArray(parsed) ? parsed : [parsed];
                 } catch (e) {
+                    console.warn('Failed to parse JSON string from filesArray[0]:', e);
                 }
             }
             
@@ -372,6 +263,7 @@ export default function uploadcareField(config) {
                         addFile(parsedItem, index);
                         return;
                     } catch (e) {
+                        console.warn(`Failed to parse string item ${index} as JSON:`, e);
                     }
                 }
 
@@ -379,6 +271,7 @@ export default function uploadcareField(config) {
                 const cdnUrlModifiers = typeof item === 'object' ? item.cdnUrlModifiers : null;
 
                 if (!url || !this.isValidUrl(url)) {
+                    console.warn(`Invalid URL for file ${index}:`, url);
                     return;
                 }
 
@@ -420,7 +313,7 @@ export default function uploadcareField(config) {
         },
 
         setupStateWatcher() {
-            this.$watch('state', (newValue, oldValue) => {
+            this.$watch('state', (newValue) => {
                 if (this.isLocalUpdate) {
                     this.isLocalUpdate = false;
                     return;
@@ -440,70 +333,11 @@ export default function uploadcareField(config) {
                 
                 if (normalizedNewValue !== normalizedUploadedFiles) {
                     if (newValue && newValue !== '[]' && newValue !== '""') {
-                        this.addFilesFromState(newValue);
+                        this.uploadedFiles = newValue;
+                        this.isLocalUpdate = true;
                     }
                 }
             });
-        },
-        
-        parseStateValue(value) {
-            if (!value) return null;
-            
-            try {
-                if (typeof value === 'string') {
-                    return JSON.parse(value);
-                }
-                return value;
-            } catch (e) {
-                return value;
-            }
-        },
-
-        addFilesFromState(newValue) {
-            const parsed = this.parseStateValue(newValue);
-            let filesToAdd = parsed;
-
-            if (!Array.isArray(filesToAdd)) {
-                filesToAdd = [filesToAdd];
-            }
-
-            if (filesToAdd.length === 0) {
-                return false;
-            }
-
-            const api = this.getUploadcareApi();
-            if (!api || typeof api.addFileFromCdnUrl !== 'function') {
-                return false;
-            }
-
-            const currentFiles = this.getCurrentFiles();
-            const currentUrls = currentFiles.map(file => {
-                const url = typeof file === 'object' ? file.cdnUrl : file;
-                return url;
-            }).filter(Boolean);
-            
-            filesToAdd.forEach(item => {
-                const url = typeof item === 'object' ? item.cdnUrl : item;
-                if (url && typeof url === 'string' && url.includes('ucarecdn.com')) {
-                    const urlExists = currentUrls.some(currentUrl => {
-                        const uuid1 = this.extractUuidFromUrl(url);
-                        const uuid2 = this.extractUuidFromUrl(currentUrl);
-                        return uuid1 && uuid2 && uuid1 === uuid2;
-                    });
-                    
-                    if (!urlExists) {
-                        try {
-                            api.addFileFromCdnUrl(url);
-                        } catch (e) {
-                            console.error('[Uploadcare] Failed to add file from URL:', url, e);
-                        }
-                    }
-                }
-            });
-            
-            this.uploadedFiles = newValue;
-            this.isLocalUpdate = true;
-            return true;
         },
 
         normalizeStateValue(value) {
@@ -606,7 +440,6 @@ export default function uploadcareField(config) {
                 
                 debounceTimer = setTimeout(() => {
                     const fileData = this.isWithMetadata ? e.detail : e.detail.cdnUrl;
-                    
                     try {
                         const currentFiles = this.getCurrentFiles();
                         const updatedFiles = this.updateFilesList(currentFiles, fileData);
@@ -617,7 +450,7 @@ export default function uploadcareField(config) {
                             form.dispatchEvent(new CustomEvent('form-processing-finished'));
                         }
                     } catch (error) {
-                        console.error('[Uploadcare] Error updating state after upload:', error);
+                        console.error('Error updating state after upload:', error);
                     }
                 }, this.isMultiple ? 200 : 100);
             };
@@ -628,8 +461,7 @@ export default function uploadcareField(config) {
             
             return (e) => {
                 const fileDetails = e.detail;
-                // Removed strict check for cdnUrlModifiers to allow updates if only cdnUrl has changed
-                if (!fileDetails || !fileDetails.cdnUrl) return;
+                if (!fileDetails.cdnUrlModifiers) return;
 
                 if (debounceTimer) {
                     clearTimeout(debounceTimer);
@@ -715,31 +547,10 @@ export default function uploadcareField(config) {
         },
 
         updateFileUrl(currentFiles, fileDetails) {
-            let uuid = fileDetails.uuid;
-            
-            if (!uuid && fileDetails.cdnUrl) {
-                uuid = this.extractUuidFromUrl(fileDetails.cdnUrl);
-            }
-            
-            if (!uuid) return currentFiles;
-
-            // Ensure uuid is present in fileDetails for the merge
-            if (!fileDetails.uuid) {
-                fileDetails = { ...fileDetails, uuid };
-            }
-
-            const fileIndex = this.findFileIndex(currentFiles, uuid);
+            const fileIndex = this.findFileIndex(currentFiles, fileDetails.uuid);
             if (fileIndex === -1) return currentFiles;
 
-            let updatedFile;
-            if (this.isWithMetadata) {
-                const originalFile = currentFiles[fileIndex];
-                // Merge with existing file to preserve properties like uuid if missing in detail
-                updatedFile = { ...originalFile, ...fileDetails };
-            } else {
-                updatedFile = fileDetails.cdnUrl;
-            }
-
+            const updatedFile = this.isWithMetadata ? fileDetails : fileDetails.cdnUrl;
             if (this.isMultiple) {
                 currentFiles[fileIndex] = updatedFile;
                 return currentFiles;
