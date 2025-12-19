@@ -282,6 +282,28 @@ class Uploadcare extends Field
     {
         $state = parent::getState();
 
+        // Handle double-encoded JSON or JSON strings
+        if (is_string($state) && json_validate($state)) {
+            $state = json_decode($state, true);
+        }
+
+        // Resolve Backstage Media ULIDs (26-char) into Uploadcare CDN URLs / UUIDs,
+        // so the widget can show a preview even when the database stores ULIDs.
+        if (is_array($state) && ! empty($state) && self::isListOfUlids($state)) {
+            $resolved = self::resolveUlidsToUploadcareState($state);
+            if (! empty($resolved)) {
+                $state = $resolved;
+            }
+        }
+
+        // Handle array of file objects (extract UUIDs / URLs)
+        if (is_array($state) && ! empty($state)) {
+             $values = self::extractValues($state);
+             if (! empty($values)) {
+                 $state = $values;
+             }
+        }
+
         if ($state === '[]' || $state === '""' || $state === null || $state === '') {
             return null;
         }
@@ -296,6 +318,102 @@ class Uploadcare extends Field
         }
 
         return $state;
+    }
+
+    private static function isListOfUlids(array $state): bool
+    {
+        if (! isset($state[0]) || ! is_string($state[0])) {
+            return false;
+        }
+
+        return (bool) preg_match('/^[0-9A-HJKMNP-TV-Z]{26}$/i', $state[0]);
+    }
+
+    private static function extractUuidFromString(string $value): ?string
+    {
+        if (preg_match('/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i', $value, $matches)) {
+            return $matches[1];
+        }
+
+        return null;
+    }
+
+    private static function resolveUlidsToUploadcareState(array $ulids): array
+    {
+        $mediaModel = config('backstage.media.model', \Backstage\Media\Models\Media::class);
+
+        if (! is_string($mediaModel) || ! class_exists($mediaModel)) {
+            return [];
+        }
+
+        $mediaItems = $mediaModel::whereIn('ulid', array_filter($ulids, 'is_string'))
+            ->get()
+            ->keyBy('ulid');
+
+        $resolved = [];
+
+        foreach ($ulids as $ulid) {
+            if (! is_string($ulid)) {
+                continue;
+            }
+
+            $media = $mediaItems->get($ulid);
+            if (! $media) {
+                continue;
+            }
+
+            $metadata = $media->metadata ?? null;
+            if (is_string($metadata)) {
+                $metadata = json_decode($metadata, true);
+            }
+            $metadata = is_array($metadata) ? $metadata : [];
+
+            $editMeta = $media->edit ?? null;
+            if (is_string($editMeta)) {
+                $editMeta = json_decode($editMeta, true);
+            }
+            if (is_array($editMeta)) {
+                $metadata = array_merge($metadata, $editMeta);
+            }
+
+            $cdnUrl = $metadata['cdnUrl'] ?? ($metadata['fileInfo']['cdnUrl'] ?? null);
+            $uuid = $metadata['uuid'] ?? ($metadata['fileInfo']['uuid'] ?? null);
+
+            if (! $uuid && is_string($media->filename ?? null)) {
+                $uuid = self::extractUuidFromString($media->filename);
+            }
+            if (! $uuid && is_string($cdnUrl)) {
+                $uuid = self::extractUuidFromString($cdnUrl);
+            }
+
+            if ((! $cdnUrl || ! filter_var($cdnUrl, FILTER_VALIDATE_URL)) && $uuid) {
+                $cdnUrl = 'https://ucarecdn.com/' . $uuid . '/';
+            }
+
+            if (is_string($cdnUrl) && filter_var($cdnUrl, FILTER_VALIDATE_URL)) {
+                $resolved[] = $cdnUrl;
+            } elseif ($uuid) {
+                $resolved[] = $uuid;
+            }
+        }
+
+        return $resolved;
+    }
+
+    private static function extractValues(array $state): array
+    {
+        $keys = ['cdnUrl', 'ucarecdn', 'uuid', 'filename'];
+
+        foreach ($keys as $key) {
+            $values = \Illuminate\Support\Arr::pluck($state, $key);
+            $filtered = array_filter($values);
+            
+            if (! empty($filtered)) {
+                return array_values($filtered);
+            }
+        }
+
+        return [];
     }
 
     private function transformUrls($value, string $from, string $to): mixed
@@ -341,6 +459,43 @@ class Uploadcare extends Field
     public function transformUrlsToDb($value): mixed
     {
         return $this->transformUrls($value, 'https://ucarecdn.com', $this->getDbCdnCname());
+    }
+
+    /**
+     * Get the normalized locale for Uploadcare.
+     * Uploadcare supports: de, en, es, fr, he, it, nl, pl, pt, ru, tr, uk, zh-TW, zh
+     */
+    public function getLocaleName(): string
+    {
+        $locale = app()->getLocale();
+
+        // Normalize locale: convert 'en_US' or 'en-US' to 'en', but keep 'zh-TW' as is
+        $normalized = str_replace('_', '-', $locale);
+
+        // Handle special cases
+        if (str_starts_with($normalized, 'zh')) {
+            // Check if it's zh-TW (Traditional Chinese)
+            if (str_contains($normalized, 'TW') || str_contains($normalized, 'tw')) {
+                return 'zh-TW';
+            }
+
+            // Otherwise return 'zh' (Simplified Chinese)
+            return 'zh';
+        }
+
+        // Extract base language code (e.g., 'en' from 'en-US' or 'en_US')
+        $baseLocale = explode('-', $normalized)[0];
+
+        // List of supported Uploadcare locales
+        $supportedLocales = ['de', 'en', 'es', 'fr', 'he', 'it', 'nl', 'pl', 'pt', 'ru', 'tr', 'uk', 'zh-TW', 'zh'];
+
+        // Check if base locale is supported
+        if (in_array($baseLocale, $supportedLocales)) {
+            return $baseLocale;
+        }
+
+        // Fallback to 'en' if locale is not supported
+        return 'en';
     }
 
     protected function setUp(): void
