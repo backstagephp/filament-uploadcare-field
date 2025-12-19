@@ -298,10 +298,10 @@ class Uploadcare extends Field
 
         // Handle array of file objects (extract UUIDs / URLs)
         if (is_array($state) && ! empty($state)) {
-            $values = self::extractValues($state);
-            if (! empty($values)) {
-                $state = $values;
-            }
+             $values = self::extractValues($state);
+             if (! empty($values)) {
+                 $state = $values;
+             }
         }
 
         if ($state === '[]' || $state === '""' || $state === null || $state === '') {
@@ -407,7 +407,7 @@ class Uploadcare extends Field
         foreach ($keys as $key) {
             $values = \Illuminate\Support\Arr::pluck($state, $key);
             $filtered = array_filter($values);
-
+            
             if (! empty($filtered)) {
                 return array_values($filtered);
             }
