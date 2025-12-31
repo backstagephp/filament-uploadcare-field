@@ -23,6 +23,8 @@ export default function uploadcareField(config) {
         ctx: null,
         removeEventListeners: null,
         uniqueContextName: config.uniqueContextName,
+        pendingUploads: [],
+        pendingRemovals: [],
         isInitialized: false,
         stateHasBeenInitialized: false,
         isStateWatcherActive: false,
@@ -165,7 +167,7 @@ export default function uploadcareField(config) {
 
         applyTheme() {
             const theme = this.getCurrentTheme();
-            const uploaders = document.querySelectorAll(`uc-file-uploader-${this.uploaderStyle}`);
+            const uploaders = this.$el.querySelectorAll(`uc-file-uploader-${this.uploaderStyle}`);
             uploaders.forEach(uploader => {
                 uploader.classList.remove('uc-dark', 'uc-light');
                 uploader.classList.add(`uc-${theme}`);
@@ -234,7 +236,7 @@ export default function uploadcareField(config) {
                 return;
             }
 
-            this.ctx = document.querySelector(`uc-upload-ctx-provider[ctx-name="${this.uniqueContextName}"]`);
+            this.ctx = this.$el.querySelector(`uc-upload-ctx-provider[ctx-name="${this.uniqueContextName}"]`);
             const api = this.getUploadcareApi();
 
             if (!this.isValidContext(api)) {
@@ -273,24 +275,14 @@ export default function uploadcareField(config) {
         },
 
         initializeState(api) {
-            this.$nextTick(() => {
-                console.log(`[Uploadcare ${this.statePath}] initializeState`, {
-                    hasInitialState: !!this.initialState,
-                    initialStatePreview: typeof this.initialState === 'string' ? this.initialState.substring(0, 100) : this.initialState,
-                    stateHasBeenInitialized: this.stateHasBeenInitialized,
-                    uploadedFiles: this.uploadedFiles,
-                    uniqueContextName: this.uniqueContextName
-                });
-                
-                if (this.initialState && !this.stateHasBeenInitialized && !this.uploadedFiles) {
-                    this.loadInitialState(api);
-                } else if (!this.initialState && !this.stateHasBeenInitialized) {
-                    this.stateHasBeenInitialized = true;
-                    this.uploadedFiles = this.isMultiple ? '[]' : '';
-                    this.isLocalUpdate = true;
-                    this.state = this.uploadedFiles;
-                }
-            });
+            if (this.initialState && !this.stateHasBeenInitialized && !this.uploadedFiles) {
+                this.loadInitialState(api);
+            } else if (!this.initialState && !this.stateHasBeenInitialized) {
+                this.stateHasBeenInitialized = true;
+                this.uploadedFiles = this.isMultiple ? '[]' : '';
+                this.isLocalUpdate = true;
+                this.state = this.uploadedFiles;
+            }
         },
 
         loadInitialState(api) {
@@ -623,13 +615,16 @@ export default function uploadcareField(config) {
         setupEventListeners(api) {
             this.pendingUploads = [];
             this.pendingRemovals = [];
+            
             const handleFileUploadSuccess = this.createFileUploadSuccessHandler(api);
             const handleFileUrlChanged = this.createFileUrlChangedHandler(api);
             const handleFileRemoved = this.createFileRemovedHandler(api);
-            // Form input change might still be useful for other changes, but we shouldn't rely on it for uploads if events work
             const handleFormInputChange = this.createFormInputChangeHandler(api);
 
-            this.ctx.addEventListener('file-upload-started', (e) => {
+            const handleFileUploadStarted = (e) => {
+                // Verify event target belongs to this instance
+                if (e.target !== this.ctx && !this.ctx.contains(e.target)) return;
+                
                 const form = this.$el.closest('form');
                 if (form) {
                     form.dispatchEvent(new CustomEvent('form-processing-started', {
@@ -638,8 +633,9 @@ export default function uploadcareField(config) {
                         }
                     }));
                 }
-            });
+            };
 
+            this.ctx.addEventListener('file-upload-started', handleFileUploadStarted);
             this.ctx.addEventListener('file-upload-success', handleFileUploadSuccess);
             this.ctx.addEventListener('file-url-changed', handleFileUrlChanged);
             this.ctx.addEventListener('file-removed', handleFileRemoved);
@@ -657,28 +653,11 @@ export default function uploadcareField(config) {
                         attributeFilter: ['value']
                     });
                     this.formInputObserver = observer;
-                } else {
-                    setTimeout(() => {
-                        const formInput = this.$el.querySelector('uc-form-input input');
-                        if (formInput) {
-                            formInput.addEventListener('input', handleFormInputChange);
-                            formInput.addEventListener('change', handleFormInputChange);
-                        }
-                    }, 200);
                 }
             });
 
             this.removeEventListeners = () => {
-                this.ctx.removeEventListener('file-upload-started', (e) => {
-                    const form = this.$el.closest('form');
-                    if (form) {
-                        form.dispatchEvent(new CustomEvent('form-processing-started', {
-                            detail: {
-                                message: 'Uploading file...',
-                            }
-                        }));
-                    }
-                });
+                this.ctx.removeEventListener('file-upload-started', handleFileUploadStarted);
                 this.ctx.removeEventListener('file-upload-success', handleFileUploadSuccess);
                 this.ctx.removeEventListener('file-url-changed', handleFileUrlChanged);
                 this.ctx.removeEventListener('file-removed', handleFileRemoved);
@@ -700,8 +679,16 @@ export default function uploadcareField(config) {
             let debounceTimer = null;
             
             return (e) => {
+                const eventCtxName = e.target.getAttribute('ctx-name');
+
+                // CRITICAL ISOLATION CHECK: Ensure this event is intended for THIS field instance
+                if (eventCtxName !== this.uniqueContextName && e.target !== this.ctx && !this.ctx.contains(e.target)) {
+                    return;
+                }
+
                 const fileData = this.isWithMetadata ? e.detail : e.detail.cdnUrl;
-                // Buffer the file
+                const fileUuid = this.extractUuidFromUrl(fileData);
+                
                 this.pendingUploads.push(fileData);
 
                 if (debounceTimer) {
@@ -713,7 +700,6 @@ export default function uploadcareField(config) {
                         let currentFiles = this.getCurrentFiles();
                         
                         // Add all buffered files
-                        // We use a loop or modify updateFilesList to accept array
                         for (const file of this.pendingUploads) {
                              currentFiles = this.updateFilesList(currentFiles, file);
                         }
@@ -736,8 +722,11 @@ export default function uploadcareField(config) {
             let debounceTimer = null;
             
             return (e) => {
+                const eventCtxName = e.target.getAttribute('ctx-name');
+                // CRITICAL ISOLATION CHECK
+                if (eventCtxName !== this.uniqueContextName && e.target !== this.ctx && !this.ctx.contains(e.target)) return;
+
                 const fileDetails = e.detail;
-                if (!fileDetails || !fileDetails.cdnUrl) return;
 
                 if (debounceTimer) {
                     clearTimeout(debounceTimer);
@@ -759,6 +748,10 @@ export default function uploadcareField(config) {
             let debounceTimer = null;
             
             return (e) => {
+                const eventCtxName = e.target.getAttribute('ctx-name');
+                // CRITICAL ISOLATION CHECK
+                if (eventCtxName !== this.uniqueContextName && e.target !== this.ctx && !this.ctx.contains(e.target)) return;
+
                 const removedFile = e.detail;
                 // Buffer the removal
                 this.pendingRemovals.push(removedFile);
@@ -814,7 +807,6 @@ export default function uploadcareField(config) {
                 if (!isDuplicate) {
                     return [...currentFiles, newFile];
                 }
-                console.log(`[Uploadcare ${this.statePath}] Skipping duplicate file`, newUuid);
                 return currentFiles;
             }
             return [newFile];
@@ -902,12 +894,6 @@ export default function uploadcareField(config) {
                 return true;
             });
 
-            console.log(`[Uploadcare ${this.statePath}] updateState`, { 
-                incomingCount: files.length, 
-                uniqueCount: uniqueFiles.length,
-                uniqueUuids: Array.from(processedUuids) 
-            });
-
             const finalFiles = this.formatFilesForState(uniqueFiles);
             const newState = JSON.stringify(finalFiles);
             const currentFiles = this.getCurrentFiles();
@@ -916,7 +902,6 @@ export default function uploadcareField(config) {
             const hasActuallyChanged = currentStateNormalized !== newStateNormalized;
 
             if (hasActuallyChanged) {
-                console.log(`[Uploadcare ${this.statePath}] State HAS changed, updating uploadedFiles`);
                 this.uploadedFiles = newState;
                 this.isLocalUpdate = true;
                 this.state = this.uploadedFiles;
@@ -926,8 +911,6 @@ export default function uploadcareField(config) {
                         this.isLocalUpdate = false;
                     });
                 }
-            } else {
-                 console.log(`[Uploadcare ${this.statePath}] State has NOT moved, ignoring update`);
             }
         },
 
