@@ -402,18 +402,42 @@ class Uploadcare extends Field
 
     private static function extractValues(array $state): array
     {
-        $keys = ['cdnUrl', 'ucarecdn', 'uuid', 'filename'];
-
-        foreach ($keys as $key) {
-            $values = \Illuminate\Support\Arr::pluck($state, $key);
-            $filtered = array_filter($values);
-
-            if (! empty($filtered)) {
-                return array_values($filtered);
+        return array_values(array_filter(array_map(function ($item) {
+            if (is_string($item)) {
+                return $item;
             }
-        }
 
-        return [];
+            if (! is_array($item)) {
+                return null;
+            }
+
+            // Check for 'edit' meta which contains cropped URL from our backend hydration
+            $cdnUrl = null;
+            $edit = $item['edit'] ?? null;
+            if ($edit) {
+               $edit = is_string($edit) ? json_decode($edit, true) : $edit;
+               $cdnUrl = $edit['cdnUrl'] ?? null;
+            }
+
+            if (! $cdnUrl) {
+                // Fallback to metadata
+                $meta = $item['metadata'] ?? null;
+                if ($meta) {
+                    $meta = is_string($meta) ? json_decode($meta, true) : $meta;
+                    $cdnUrl = $meta['cdnUrl'] ?? null;
+                }
+            }
+
+            if (! $cdnUrl) {
+                $cdnUrl = $item['cdnUrl'] ?? $item['ucarecdn'] ?? null;
+            }
+
+            if ($cdnUrl) {
+                return $cdnUrl;
+            }
+
+            return $item['uuid'] ?? $item['filename'] ?? null;
+        }, $state)));
     }
 
     private function transformUrls($value, string $from, string $to): mixed
