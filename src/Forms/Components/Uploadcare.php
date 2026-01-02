@@ -407,7 +407,8 @@ class Uploadcare extends Field
                 return $item;
             }
 
-            if (! is_array($item)) {
+            // Allow objects (Models) if they implement ArrayAccess or are just objects we can read properties from
+            if (! is_array($item) && ! is_object($item)) {
                 return null;
             }
 
@@ -429,6 +430,7 @@ class Uploadcare extends Field
             }
 
             if (! $cdnUrl) {
+                // Safely access array/object keys
                 $cdnUrl = $item['cdnUrl'] ?? $item['ucarecdn'] ?? null;
             }
 
