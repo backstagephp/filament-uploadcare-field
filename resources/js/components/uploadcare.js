@@ -43,6 +43,11 @@ export default function uploadcareField(config) {
             
             await this.loadAllLocales();
             
+            // ZOMBIE CHECK: If component was removed while loading locales, abort.
+            if (!this.$el.isConnected) {
+                return;
+            }
+
             this.setupStateWatcher();
             
             this.$el.addEventListener('uploadcare-state-updated', (e) => {
@@ -61,6 +66,21 @@ export default function uploadcareField(config) {
             this.initUploadcare();
             this.setupThemeObservers();
             this.setupDoneButtonObserver();
+
+            // PROACTIVE CLEAR: If we are initializing and state is already empty/null,
+            // ensure the widget is also cleared (covers some re-init scenarios).
+            // Especially helpful when using "Create & Create Another".
+            if (!this.state || this.state === '[]' || this.state === '""') {
+                this.$nextTick(() => {
+                    if (this.isInitialized) {
+                        // Only verify if we really need to clear visually
+                        const current = this.getCurrentFiles();
+                        if (current.length > 0) {
+                             this.clearAllFiles(false);
+                        }
+                    }
+                });
+            }
         },
 
         isContextAlreadyInitialized() {
@@ -454,12 +474,27 @@ export default function uploadcareField(config) {
                     return;
                 }
                 
+                // ZOMBIE PROOFING: If component is detached, stop watching/syncing immediately.
+                if (!this.$el.isConnected) {
+                    return;
+                }
+                
                 if (!this.stateHasBeenInitialized) {
                     this.stateHasBeenInitialized = true;
                     return;
                 }
                 
-                if ((!newValue || newValue === '[]' || newValue === '""') && !this.uploadedFiles) {
+                if (!newValue || newValue === '[]' || newValue === '""' || (Array.isArray(newValue) && newValue.length === 0)) {
+                    // Only clear if we actually have files to clear. 
+                    // Prevents infinite loop of: Server(null) -> Watcher -> clearAllFiles -> State([]) -> Server(null)
+                    if (this.uploadedFiles && this.uploadedFiles !== '[]' && this.uploadedFiles !== '""') {
+                         // Double check we aren't just initialized with empty
+                         const current = this.getCurrentFiles();
+                         if (current.length > 0) {
+                            console.log(`[Uploadcare ${this.statePath}] State cleared (server sent empty), calling clearAllFiles(SILENT)`);
+                            this.clearAllFiles(false);
+                         }
+                    }
                     return;
                 }
                 
@@ -1192,6 +1227,70 @@ export default function uploadcareField(config) {
                 }
                 
                 return [];
+            }
+        },
+
+        clearAllFiles(emitStateChange = true) {
+            const path = this.statePath || 'unknown';
+            
+            const api = this.getUploadcareApi();
+            if (api) {
+                console.log(`[Uploadcare ${path}] API found. Attempting clear methods.`, {
+                    hasCollection: !!api.collection,
+                    hasGetCollection: typeof api.getCollection === 'function',
+                    hasRemoveAll: typeof api.removeAllFiles === 'function'
+                });
+
+                // 1. Try Collection Clear (Standard for Blocks)
+                try {
+                    if (api.collection && typeof api.collection.clear === 'function') {
+                        api.collection.clear();
+                    } else if (typeof api.getCollection === 'function') {
+                        const coll = api.getCollection();
+                        if (coll && typeof coll.clear === 'function') coll.clear();
+                    }
+                } catch (e) {
+                    console.warn(`[Uploadcare ${path}] collection clear error:`, e);
+                }
+
+                // 2. Try removeAllFiles
+                try {
+                    if (typeof api.removeAllFiles === 'function') {
+                        api.removeAllFiles();
+                    }
+                } catch (e) {}
+
+                // 3. Try value reset
+                try {
+                    if (typeof api.value === 'function') {
+                        api.value([]);
+                    } else {
+                        api.value = [];
+                    }
+                } catch (e) {}
+            } else {
+                console.warn(`[Uploadcare ${path}] No API discovered for clearing`);
+            }
+
+            // Also try to reach into form-input if possible
+            try {
+                const formInput = this.$el.querySelector('uc-form-input');
+                if (formInput && typeof formInput.getAPI === 'function') {
+                    const fiApi = formInput.getAPI();
+                    if (fiApi) {
+                        // console.log(`[Uploadcare ${path}] resetting uc-form-input via API`);
+                        fiApi.value = this.isMultiple ? [] : '';
+                    }
+                }
+            } catch (e) {}
+
+            if (this.uploadedFiles !== (this.isMultiple ? '[]' : '')) {
+                this.uploadedFiles = this.isMultiple ? '[]' : '';
+                this.isLocalUpdate = true;
+                
+                if (emitStateChange) {
+                    this.state = this.uploadedFiles;
+                }
             }
         }
     };
