@@ -416,8 +416,8 @@ class Uploadcare extends Field
             $cdnUrl = null;
             $edit = $item['edit'] ?? null;
             if ($edit) {
-               $edit = is_string($edit) ? json_decode($edit, true) : $edit;
-               $cdnUrl = $edit['cdnUrl'] ?? null;
+                $edit = is_string($edit) ? json_decode($edit, true) : $edit;
+                $cdnUrl = $edit['cdnUrl'] ?? null;
             }
 
             if (! $cdnUrl) {
