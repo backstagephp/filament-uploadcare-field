@@ -121,6 +121,7 @@ class Uploadcare extends Field
                     return $part;
                 }
             }
+
             return end($parts);
         }
 
@@ -312,8 +313,8 @@ class Uploadcare extends Field
     public function getState(): mixed
     {
         $state = parent::getState();
-        
-        \Log::info("[CROP DEBUG] Uploadcare::getState called", [
+
+        \Log::info('[CROP DEBUG] Uploadcare::getState called', [
             'field' => $this->getName(),
             'type' => gettype($state),
             'is_array' => is_array($state),
@@ -329,7 +330,7 @@ class Uploadcare extends Field
         }
 
         if ($state === null || $state === '' || $state === []) {
-             return $state;
+            return $state;
         }
 
         // If it's already a rich object (single file field), we're done resolving.
@@ -348,13 +349,13 @@ class Uploadcare extends Field
 
         // Resolve Backstage Media ULIDs or Models into Uploadcare rich objects.
         $resolved = self::resolveUlidsToUploadcareState($items, $this->getRecord(), $this->getFieldUlid());
-        
+
         // Transform URLs from database format back to ucarecdn.com format for the widget
         if ($this->shouldTransformUrlsForDb()) {
             $resolved = $this->transformUrlsFromDb($resolved);
         }
 
-        \Log::info("[CROP DEBUG] Uploadcare::getState result", [
+        \Log::info('[CROP DEBUG] Uploadcare::getState result', [
             'field' => $this->getName(),
             'resolved_count' => count($resolved),
             'first_url' => is_array($resolved[0] ?? null) ? ($resolved[0]['cdnUrl'] ?? null) : ($resolved[0] ?? null),
@@ -367,13 +368,20 @@ class Uploadcare extends Field
 
         return $resolved[0] ?? null;
     }
+
     private static function isListOfUlids(array $state): bool
     {
-        if (empty($state) || ! array_is_list($state)) return false;
-        
+        if (empty($state) || ! array_is_list($state)) {
+            return false;
+        }
+
         $first = $state[0];
-        if ($first instanceof Model) return true;
-        if (!is_string($first)) return false;
+        if ($first instanceof Model) {
+            return true;
+        }
+        if (! is_string($first)) {
+            return false;
+        }
 
         return (bool) preg_match('/^[0-9A-HJKMNP-TV-Z]{26}$/i', $first);
     }
@@ -393,7 +401,7 @@ class Uploadcare extends Field
             return [];
         }
 
-        \Log::info("[CROP DEBUG] resolveUlidsToUploadcareState starting", [
+        \Log::info('[CROP DEBUG] resolveUlidsToUploadcareState starting', [
             'field' => $fieldName,
             'count' => count($items),
         ]);
@@ -428,6 +436,7 @@ class Uploadcare extends Field
                         foreach ($parts as $part) {
                             if (preg_match('/^[0-9A-HJKMNP-TV-Z]{26}$/i', $part)) {
                                 $fieldSlug = $part;
+
                                 break;
                             }
                         }
@@ -436,7 +445,7 @@ class Uploadcare extends Field
                         }
                     }
 
-                    \Log::info("[CROP DEBUG] resolveUlidsToUploadcareState searching for CFV", [
+                    \Log::info('[CROP DEBUG] resolveUlidsToUploadcareState searching for CFV', [
                         'record_ulid' => $record->ulid,
                         'field_slug' => $fieldSlug,
                         'original_field_name' => $fieldName,
@@ -446,9 +455,9 @@ class Uploadcare extends Field
                         ->where(function ($query) use ($fieldSlug) {
                             $query->whereHas('field', function ($q) use ($fieldSlug) {
                                 $q->where('slug', $fieldSlug)
-                                  ->orWhere('ulid', $fieldSlug);
+                                    ->orWhere('ulid', $fieldSlug);
                             })
-                            ->orWhere('ulid', $fieldSlug);
+                                ->orWhere('ulid', $fieldSlug);
                         })
                         ->first();
 
@@ -458,10 +467,11 @@ class Uploadcare extends Field
                             ->whereIn('media_ulid', array_values($ulidsToResolve))
                             ->get()
                             ->keyBy('ulid');
-                        
-                        \Log::info("[CROP DEBUG] resolveUlidsToUploadcareState: Loaded " . $mediaItems->count() . " media items via CFV");
+
+                        \Log::info('[CROP DEBUG] resolveUlidsToUploadcareState: Loaded ' . $mediaItems->count() . ' media items via CFV');
                     }
-                } catch (\Exception $e) {}
+                } catch (\Exception $e) {
+                }
             }
 
             // Fallback for record media or direct query
@@ -472,13 +482,14 @@ class Uploadcare extends Field
                         ->whereIn('media_ulid', array_values($ulidsToResolve))
                         ->get()
                         ->keyBy('ulid');
-                    \Log::info("[CROP DEBUG] resolveUlidsToUploadcareState: Loaded " . ($mediaItems ? $mediaItems->count() : 0) . " media items via record fallback");
-                } catch (\Exception $e) {}
+                    \Log::info('[CROP DEBUG] resolveUlidsToUploadcareState: Loaded ' . ($mediaItems ? $mediaItems->count() : 0) . ' media items via record fallback');
+                } catch (\Exception $e) {
+                }
             }
 
             if (! $mediaItems || $mediaItems->isEmpty()) {
                 $mediaItems = $mediaModel::whereIn('ulid', array_values($ulidsToResolve))->get()->keyBy('ulid');
-                \Log::info("[CROP DEBUG] resolveUlidsToUploadcareState: Loaded " . ($mediaItems ? $mediaItems->count() : 0) . " media items via direct query fallback");
+                \Log::info('[CROP DEBUG] resolveUlidsToUploadcareState: Loaded ' . ($mediaItems ? $mediaItems->count() : 0) . ' media items via direct query fallback');
             }
 
             foreach ($ulidsToResolve as $index => $ulid) {
@@ -496,21 +507,26 @@ class Uploadcare extends Field
         }
 
         ksort($resolved); // Restore original order
-        
+
         $final = array_values($resolved);
-        
+
         // Deduplicate by UUID to prevent same file appearing twice
         $uniqueUuids = [];
-        $final = array_filter($final, function($item) use (&$uniqueUuids) {
+        $final = array_filter($final, function ($item) use (&$uniqueUuids) {
             $uuid = is_array($item) ? ($item['uuid'] ?? null) : (is_string($item) ? $item : null);
-            if (!$uuid) return true;
-            if (in_array($uuid, $uniqueUuids)) return false;
+            if (! $uuid) {
+                return true;
+            }
+            if (in_array($uuid, $uniqueUuids)) {
+                return false;
+            }
             $uniqueUuids[] = $uuid;
+
             return true;
         });
         $final = array_values($final);
 
-        \Log::info("[CROP DEBUG] resolveUlidsToUploadcareState finished", [
+        \Log::info('[CROP DEBUG] resolveUlidsToUploadcareState finished', [
             'field' => $fieldName,
             'count' => count($final),
         ]);
@@ -524,6 +540,7 @@ class Uploadcare extends Field
             if (isset($state['uuid']) || isset($state['cdnUrl'])) {
                 return [$state];
             }
+
             return [];
         }
 
@@ -604,6 +621,7 @@ class Uploadcare extends Field
                 foreach ($v as $key => $subValue) {
                     $v[$key] = $replaceCdn($subValue);
                 }
+
                 return $v;
             }
 
