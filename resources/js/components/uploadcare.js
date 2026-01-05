@@ -489,7 +489,23 @@ export default function uploadcareField(config) {
         },
 
         setupStateWatcher() {
-            // State watcher removed - handled by Alpine's x-model
+            this.$watch('state', (value) => {
+                if (this.isLocalUpdate) {
+                    this.isLocalUpdate = false;
+                    return;
+                }
+
+                // Initial basic logic: Clear files if state becomes empty
+                if (value === null || value === undefined || value === '' || value === '[]' || (Array.isArray(value) && value.length === 0)) {
+                    this.clearAllFiles(false);
+                } else if (value) {
+                    // Try to re-sync or add files if state changes externally
+                    // This handles cases where state is set externally to a new non-empty value
+                    if (this.isInitialized) {
+                       this.addFilesFromState(value);
+                    }
+                }
+            });
         },
         
         parseStateValue(value) {
