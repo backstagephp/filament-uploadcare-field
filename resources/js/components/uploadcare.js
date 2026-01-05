@@ -423,7 +423,7 @@ export default function uploadcareField(config) {
                             api.addFileFromUuid(uuid);
                         }
                     } catch (e) {
-                        console.error(`Failed to add file ${index} with UUID ${uuid}:`, e);
+                        // console.error(`Failed to add file ${index} with UUID ${uuid}:`, e);
                     }
                 } else if (!uuid) {
                     console.error(`Could not extract UUID from URL: ${url}`);
@@ -884,7 +884,7 @@ export default function uploadcareField(config) {
                      };
                 }
 
-                // Merge with existing file to preserve properties like uuid if missing in detail
+                // Merge with existing file to preserve properties like uuid if missing ‘in detail
                 updatedFile = { ...originalFile, ...fileDetails };
 
                 // Extract and persist modifiers from the new URL if present
@@ -892,6 +892,10 @@ export default function uploadcareField(config) {
                     const extractedModifiers = this.extractModifiersFromUrl(updatedFile.cdnUrl);
                     if (extractedModifiers) {
                         updatedFile.cdnUrlModifiers = extractedModifiers;
+                    } else {
+                        // Explicitly clear modifiers if URL is clean (user removed crop)
+                        updatedFile.cdnUrlModifiers = null;
+                         delete updatedFile.cdnUrlModifiers;
                     }
                 }
             } else {
