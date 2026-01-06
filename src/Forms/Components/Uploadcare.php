@@ -313,7 +313,7 @@ class Uploadcare extends Field
     public function getState(): mixed
     {
         $state = parent::getState();
-
+        
         // Handle double-encoded JSON or JSON strings
         if (is_string($state) && json_validate($state)) {
             $decoded = json_decode($state, true);
@@ -444,7 +444,7 @@ class Uploadcare extends Field
                             ->whereIn('media_ulid', array_values($ulidsToResolve))
                             ->get()
                             ->keyBy('ulid');
-
+                        
                     }
                 } catch (\Exception $e) {
                 }
@@ -458,8 +458,7 @@ class Uploadcare extends Field
                         ->whereIn('media_ulid', array_values($ulidsToResolve))
                         ->get()
                         ->keyBy('ulid');
-                } catch (\Exception $e) {
-                }
+                } catch (\Exception $e) {}
             }
 
             if (! $mediaItems || $mediaItems->isEmpty()) {
