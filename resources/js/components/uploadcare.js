@@ -402,14 +402,6 @@ export default function uploadcareField(config) {
                 const url = (item && typeof item === 'object') ? item.cdnUrl : item;
                 const cdnUrlModifiers = (item && typeof item === 'object') ? item.cdnUrlModifiers : null;
 
-                console.log(`[CROP DEBUG JS] ${this.name} addFile (initialState)`, {
-                    index,
-                    url,
-                    cdnUrlModifiers,
-                    has_modifiers_in_url: url && url.includes('/-/'),
-                    item: JSON.stringify(item).substring(0, 500) // Show partial item to avoid huge logs
-                });
-
                 if (!url || !this.isValidUrl(url)) {
                     return;
                 }
@@ -430,7 +422,6 @@ export default function uploadcareField(config) {
                                 fullUrl = baseUrl + (baseUrl.endsWith('/') ? '' : '/') + (modifiers.startsWith('-/') ? '' : '-/') + modifiers;
                             }
                             
-                            console.log(`[CROP DEBUG JS] ${this.name} api.addFileFromCdnUrl`, { fullUrl });
                             api.addFileFromCdnUrl(fullUrl);
                         } else {
                             api.addFileFromUuid(uuid);
@@ -525,16 +516,6 @@ export default function uploadcareField(config) {
             const parsed = this.parseStateValue(newValue);
             let filesToAdd = parsed;
 
-            console.log('[CROP DEBUG JS] addFilesFromState called', {
-                newValue_type: typeof newValue,
-                parsed_length: Array.isArray(parsed) ? parsed.length : 'not_array',
-                first_item: parsed && parsed[0] ? {
-                    has_cdnUrlModifiers: !!parsed[0].cdnUrlModifiers,
-                    cdnUrlModifiers: parsed[0].cdnUrlModifiers,
-                    cdnUrl: parsed[0].cdnUrl,
-                    keys: Object.keys(parsed[0])
-                } : null
-            });
 
             if (!Array.isArray(filesToAdd)) {
                 filesToAdd = [filesToAdd];
@@ -579,12 +560,6 @@ export default function uploadcareField(config) {
                     });
                     
                     if (!urlExists) {
-                        console.log('[CROP DEBUG JS] Adding file to Uploadcare', {
-                            url: url,
-                            has_cdnUrlModifiers: !!item.cdnUrlModifiers,
-                            cdnUrlModifiers: item.cdnUrlModifiers,
-                            url_includes_modifiers: url.includes('-/'),
-                        });
                         try {
                             api.addFileFromCdnUrl(url);
                         } catch (e) {
@@ -780,11 +755,6 @@ export default function uploadcareField(config) {
                         const currentFiles = this.getCurrentFiles();
                         const updatedFiles = this.updateFileUrl(currentFiles, fileDetails);
                         
-                        console.log('[CROP DEBUG JS] File URL changed', {
-                            uuid: fileDetails.uuid,
-                            new_url: fileDetails.cdnUrl,
-                            has_modifiers: fileDetails.cdnUrl?.includes('-/')
-                        });
                         
                         this.updateState(updatedFiles);
                     } catch (n) {
@@ -943,11 +913,6 @@ export default function uploadcareField(config) {
                     return true;
                 });
 
-                console.log(`[CROP DEBUG JS] ${this.name} updateState`, {
-                    count: uniqueFiles.length,
-                    first_has_modifiers: !!uniqueFiles[0]?.cdnUrlModifiers,
-                    first_modifiers: uniqueFiles[0]?.cdnUrlModifiers
-                });
 
                 const finalFiles = this.formatFilesForState(uniqueFiles);
                 const newState = this.buildStateFromFiles(finalFiles);

@@ -313,14 +313,7 @@ class Uploadcare extends Field
     public function getState(): mixed
     {
         $state = parent::getState();
-
-        \Log::info('[CROP DEBUG] Uploadcare::getState called', [
-            'field' => $this->getName(),
-            'type' => gettype($state),
-            'is_array' => is_array($state),
-            'raw_state' => is_string($state) ? (json_validate($state) ? 'JSON STRING' : substr($state, 0, 100)) : (is_array($state) ? (array_is_list($state) ? 'LIST count ' . count($state) : 'ASSOC keys ' . implode(',', array_keys($state))) : $state),
-        ]);
-
+        
         // Handle double-encoded JSON or JSON strings
         if (is_string($state) && json_validate($state)) {
             $decoded = json_decode($state, true);
@@ -354,12 +347,6 @@ class Uploadcare extends Field
         if ($this->shouldTransformUrlsForDb()) {
             $resolved = $this->transformUrlsFromDb($resolved);
         }
-
-        \Log::info('[CROP DEBUG] Uploadcare::getState result', [
-            'field' => $this->getName(),
-            'resolved_count' => count($resolved),
-            'first_url' => is_array($resolved[0] ?? null) ? ($resolved[0]['cdnUrl'] ?? null) : ($resolved[0] ?? null),
-        ]);
 
         // Final return format based on isMultiple()
         if ($this->isMultiple()) {
@@ -401,10 +388,6 @@ class Uploadcare extends Field
             return [];
         }
 
-        \Log::info('[CROP DEBUG] resolveUlidsToUploadcareState starting', [
-            'field' => $fieldName,
-            'count' => count($items),
-        ]);
         $resolved = [];
         $ulidsToResolve = [];
         $preResolvedModels = [];
@@ -445,12 +428,6 @@ class Uploadcare extends Field
                         }
                     }
 
-                    \Log::info('[CROP DEBUG] resolveUlidsToUploadcareState searching for CFV', [
-                        'record_ulid' => $record->ulid,
-                        'field_slug' => $fieldSlug,
-                        'original_field_name' => $fieldName,
-                    ]);
-
                     $fieldValue = $record->values()
                         ->where(function ($query) use ($fieldSlug) {
                             $query->whereHas('field', function ($q) use ($fieldSlug) {
@@ -467,8 +444,7 @@ class Uploadcare extends Field
                             ->whereIn('media_ulid', array_values($ulidsToResolve))
                             ->get()
                             ->keyBy('ulid');
-
-                        \Log::info('[CROP DEBUG] resolveUlidsToUploadcareState: Loaded ' . $mediaItems->count() . ' media items via CFV');
+                        
                     }
                 } catch (\Exception $e) {
                 }
@@ -482,14 +458,11 @@ class Uploadcare extends Field
                         ->whereIn('media_ulid', array_values($ulidsToResolve))
                         ->get()
                         ->keyBy('ulid');
-                    \Log::info('[CROP DEBUG] resolveUlidsToUploadcareState: Loaded ' . ($mediaItems ? $mediaItems->count() : 0) . ' media items via record fallback');
-                } catch (\Exception $e) {
-                }
+                } catch (\Exception $e) {}
             }
 
             if (! $mediaItems || $mediaItems->isEmpty()) {
                 $mediaItems = $mediaModel::whereIn('ulid', array_values($ulidsToResolve))->get()->keyBy('ulid');
-                \Log::info('[CROP DEBUG] resolveUlidsToUploadcareState: Loaded ' . ($mediaItems ? $mediaItems->count() : 0) . ' media items via direct query fallback');
             }
 
             foreach ($ulidsToResolve as $index => $ulid) {
@@ -525,11 +498,6 @@ class Uploadcare extends Field
             return true;
         });
         $final = array_values($final);
-
-        \Log::info('[CROP DEBUG] resolveUlidsToUploadcareState finished', [
-            'field' => $fieldName,
-            'count' => count($final),
-        ]);
 
         return $final;
     }
