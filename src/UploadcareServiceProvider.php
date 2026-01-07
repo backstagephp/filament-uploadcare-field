@@ -88,105 +88,54 @@ class UploadcareServiceProvider extends PackageServiceProvider
         FilamentView::registerRenderHook(PanelsRenderHook::HEAD_END, function () {
             return <<<'HTML'
                     <script type="module">
-                        // Load base UC module and register all locales BEFORE components initialize
-                        (async () => {
-                            const supportedLocales = ['de', 'es', 'fr', 'he', 'it', 'nl', 'pl', 'pt', 'ru', 'tr', 'uk', 'zh-TW', 'zh'];
-                            
-                            try {
-                                // Import the base UC module which has defineLocale
-                                const UCModule = await import('https://cdn.jsdelivr.net/npm/@uploadcare/file-uploader@v1/web/file-uploader.min.js');
-                                const UC = UCModule.default || UCModule;
-                                
-                                if (!UC || typeof UC.defineLocale !== 'function') {
-                                    return;
-                                }
-                                
-                                // Load and register all locales in parallel
-                                const localePromises = supportedLocales.map(async (locale) => {
-                                    try {
-                                        const localeModule = await import(`https://cdn.jsdelivr.net/npm/@uploadcare/file-uploader@v1/locales/file-uploader/${locale}.js`);
-                                        const localeData = localeModule.default || localeModule;
-                                        UC.defineLocale(locale, localeData);
-                                        return { locale, success: true };
-                                    } catch (error) {
-                                        return { locale, success: false, error };
+                    import * as UC from "https://cdn.jsdelivr.net/npm/@uploadcare/file-uploader@v1/web/uc-file-uploader-inline.min.js";
+                        UC.defineComponents(UC);
+
+                        const handleSourceList = (wrapper) => {
+                            if (wrapper.classList.contains('processed')) return;
+
+                            const config = wrapper.querySelector('uc-config');
+                            if (!config) return;
+
+                            const sourceList = config.getAttribute('source-list') || '';
+                            const sources = sourceList.split(',');
+
+                            if (sources.length === 1) {
+                                wrapper.classList.add('single-source');
+                            }
+
+                            // Mark as processed to avoid reprocessing
+                            wrapper.classList.add('processed');
+                        };
+
+                        // Initial check for existing elements
+                        document.addEventListener('DOMContentLoaded', () => {
+                            document.querySelectorAll('.uploadcare-wrapper').forEach(handleSourceList);
+                        });
+
+                        // Watch for new elements
+                        const observer = new MutationObserver((mutations) => {
+                            mutations.forEach(mutation => {
+                                mutation.addedNodes.forEach(node => {
+                                    if (node.nodeType === 1) { // Check if it's an element node
+                                        if (node.classList?.contains('uploadcare-wrapper')) {
+                                            handleSourceList(node);
+                                        }
+                                        // Also check children of added nodes
+                                        node.querySelectorAll?.('.uploadcare-wrapper')?.forEach(handleSourceList);
                                     }
                                 });
-                                
-                                await Promise.all(localePromises);
-                                
-                                // Make UC available globally so component scripts can use it
-                                window.UC = UC;
-                                window._uploadcareLocales = new Set(supportedLocales);
-                                window._uploadcareAllLocalesLoaded = true;
-                            } catch (error) {
-                                // Silently fail
-                            }
-                        })();
-
-                        // Component initialization and source list handling
-                        (async () => {
-                            // Wait for UC to be available
-                            while (!window.UC) {
-                                await new Promise(resolve => setTimeout(resolve, 50));
-                            }
-                            
-                            const UC = window.UC;
-                            
-                            // Import component script and define components
-                            const componentModule = await import("https://cdn.jsdelivr.net/npm/@uploadcare/file-uploader@v1/web/uc-file-uploader-inline.min.js");
-                            const ComponentUC = componentModule.default || componentModule;
-                            
-                            // Use the same UC instance for defineComponents
-                            if (typeof UC.defineComponents === 'function') {
-                                UC.defineComponents(UC);
-                            }
-
-                            const handleSourceList = (wrapper) => {
-                                if (wrapper.classList.contains('processed')) return;
-
-                                const config = wrapper.querySelector('uc-config');
-                                if (!config) return;
-
-                                const sourceList = config.getAttribute('source-list') || '';
-                                const sources = sourceList.split(',');
-
-                                if (sources.length === 1) {
-                                    wrapper.classList.add('single-source');
-                                }
-
-                                // Mark as processed to avoid reprocessing
-                                wrapper.classList.add('processed');
-                            };
-
-                            // Initial check for existing elements
-                            document.addEventListener('DOMContentLoaded', () => {
-                                document.querySelectorAll('.uploadcare-wrapper').forEach(handleSourceList);
                             });
+                        });
 
-                            // Watch for new elements
-                            const observer = new MutationObserver((mutations) => {
-                                mutations.forEach(mutation => {
-                                    mutation.addedNodes.forEach(node => {
-                                        if (node.nodeType === 1) { // Check if it's an element node
-                                            if (node.classList?.contains('uploadcare-wrapper')) {
-                                                handleSourceList(node);
-                                            }
-                                            // Also check children of added nodes
-                                            node.querySelectorAll?.('.uploadcare-wrapper')?.forEach(handleSourceList);
-                                        }
-                                    });
-                                });
-                            });
+                        // Start observing with more specific options
+                        observer.observe(document.body, {
+                            childList: true,
+                            subtree: true,
+                            attributes: true,
+                            attributeFilter: ['source-list']
+                        });
 
-                            // Start observing with more specific options
-                            observer.observe(document.body, {
-                                childList: true,
-                                subtree: true,
-                                attributes: true,
-                                attributeFilter: ['source-list']
-                            });
-                        })();
                     </script>
                 HTML;
         });
