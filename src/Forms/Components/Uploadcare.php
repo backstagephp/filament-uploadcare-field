@@ -3,9 +3,11 @@
 namespace Backstage\Uploadcare\Forms\Components;
 
 use Backstage\Uploadcare\Enums\Style;
+use Backstage\Uploadcare\Events\MediaUploading;
 use Backstage\UploadcareField\Uploadcare as Factory;
 use Filament\Forms\Components\Field;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Event;
 use InvalidArgumentException;
 
 class Uploadcare extends Field
@@ -668,6 +670,12 @@ class Uploadcare extends Field
             }
 
             return $state;
+        });
+
+        $this->afterStateUpdated(function (Uploadcare $component, $state, $old) {
+            if ($state !== $old && !empty($state)) {
+                Event::dispatch(new MediaUploading($state));
+            }
         });
     }
 }
