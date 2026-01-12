@@ -673,7 +673,7 @@ class Uploadcare extends Field
         });
 
         $this->afterStateUpdated(function (Uploadcare $component, $state, $old) {
-            if ($state !== $old && !empty($state)) {
+            if ($state !== $old && ! empty($state)) {
                 Event::dispatch(new MediaUploading($state));
             }
         });
