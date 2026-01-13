@@ -3,11 +3,7 @@
 namespace Backstage\Uploadcare\Forms\Components;
 
 use Backstage\Uploadcare\Enums\Style;
-use Backstage\Uploadcare\Events\MediaUploading;
-use Backstage\UploadcareField\Uploadcare as Factory;
 use Filament\Forms\Components\Field;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\Event;
 use InvalidArgumentException;
 
 class Uploadcare extends Field
@@ -25,8 +21,6 @@ class Uploadcare extends Field
     protected bool $imgOnly = false;
 
     protected bool $withMetadata = false;
-
-    protected string $fieldUlid = '';
 
     protected Style $uploaderStyle = Style::INLINE;
 
@@ -100,34 +94,6 @@ class Uploadcare extends Field
     public function getPublicKey(): string
     {
         return $this->publicKey;
-    }
-
-    public function fieldUlid(string $ulid): static
-    {
-        $this->fieldUlid = $ulid;
-
-        return $this;
-    }
-
-    public function getFieldUlid(): string
-    {
-        if ($this->fieldUlid) {
-            return $this->fieldUlid;
-        }
-
-        $name = $this->getName();
-        if (str_contains($name, '.')) {
-            $parts = explode('.', $name);
-            foreach ($parts as $part) {
-                if (preg_match('/^[0-9A-HJKMNP-TV-Z]{26}$/i', $part)) {
-                    return $part;
-                }
-            }
-
-            return end($parts);
-        }
-
-        return $name;
     }
 
     public function isMultiple(): bool
@@ -316,252 +282,20 @@ class Uploadcare extends Field
     {
         $state = parent::getState();
 
-        // Handle double-encoded JSON or JSON strings
-        if (is_string($state) && json_validate($state)) {
-            $decoded = json_decode($state, true);
-            if (is_array($decoded)) {
-                $state = $decoded;
-            }
+        if ($state === '[]' || $state === '""' || $state === null || $state === '') {
+            return null;
         }
-
-        if ($state === null || $state === '' || $state === []) {
-            return $state;
-        }
-
-        // If it's already a rich object (single file field), we're done resolving.
-        if (is_array($state) && ! array_is_list($state) && (isset($state['uuid']) || isset($state['cdnUrl']))) {
-            return $state;
-        }
-
-        // If it's a list where the first item is already a rich object, we're done resolving.
-        if (is_array($state) && array_is_list($state) && ! empty($state) && is_array($state[0]) && (isset($state[0]['cdnUrl']) || isset($state[0]['uuid']))) {
-            return $this->isMultiple() ? $state : $state[0];
-        }
-
-        // Normalize to list for resolution to avoid shredding associative arrays
-        $wasList = is_array($state) && array_is_list($state);
-        $items = $wasList ? $state : [$state];
-
-        // Resolve Backstage Media ULIDs or Models into Uploadcare rich objects.
-        $resolved = self::resolveUlidsToUploadcareState($items, $this->getRecord(), $this->getFieldUlid());
 
         // Transform URLs from database format back to ucarecdn.com format for the widget
-        if ($this->shouldTransformUrlsForDb()) {
-            $resolved = $this->transformUrlsFromDb($resolved);
+        if ($this->shouldTransformUrlsForDb() && ! empty($state)) {
+            $state = $this->transformUrlsFromDb($state);
         }
 
-        // Final return format based on isMultiple()
-        if ($this->isMultiple()) {
-            return array_values($resolved);
+        if (! is_array($state)) {
+            $state = [$state];
         }
 
-        return $resolved[0] ?? null;
-    }
-
-    private static function isListOfUlids(array $state): bool
-    {
-        if (empty($state) || ! array_is_list($state)) {
-            return false;
-        }
-
-        $first = $state[0];
-        if ($first instanceof Model) {
-            return true;
-        }
-        if (! is_string($first)) {
-            return false;
-        }
-
-        return (bool) preg_match('/^[0-9A-HJKMNP-TV-Z]{26}$/i', $first);
-    }
-
-    private static function extractUuidFromString(string $value): ?string
-    {
-        if (preg_match('/([a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12})/i', $value, $matches)) {
-            return $matches[1];
-        }
-
-        return null;
-    }
-
-    private static function resolveUlidsToUploadcareState(array $items, ?Model $record = null, ?string $fieldName = null): array
-    {
-        if (empty($items)) {
-            return [];
-        }
-
-        $resolved = [];
-        $ulidsToResolve = [];
-        $preResolvedModels = [];
-
-        foreach ($items as $index => $item) {
-            if ($item instanceof Model) {
-                $preResolvedModels[$index] = $item;
-            } elseif (is_string($item) && ! empty($item)) {
-                $ulidsToResolve[$index] = $item;
-            } elseif (is_array($item)) {
-                if (isset($item['cdnUrl']) || isset($item['uuid'])) {
-                    $resolved[$index] = $item; // Already a rich object
-                } elseif (isset($item['ulid'])) {
-                    $ulidsToResolve[$index] = $item['ulid'];
-                }
-            }
-        }
-
-        if (! empty($ulidsToResolve)) {
-            $mediaItems = null;
-            $mediaModel = config('backstage.media.model', \Backstage\Media\Models\Media::class);
-
-            // If we have a record and it has a values relationship (Backstage CMS), use it to get pivot metadata
-            if ($record && $fieldName && method_exists($record, 'values')) {
-                try {
-                    $fieldSlug = $fieldName;
-                    if (str_contains($fieldName, '.')) {
-                        $parts = explode('.', $fieldName);
-                        foreach ($parts as $part) {
-                            if (preg_match('/^[0-9A-HJKMNP-TV-Z]{26}$/i', $part)) {
-                                $fieldSlug = $part;
-
-                                break;
-                            }
-                        }
-                        if ($fieldSlug === $fieldName) {
-                            $fieldSlug = end($parts);
-                        }
-                    }
-
-                    $fieldValue = $record->values()
-                        ->where(function ($query) use ($fieldSlug) {
-                            $query->whereHas('field', function ($q) use ($fieldSlug) {
-                                $q->where('slug', $fieldSlug)
-                                    ->orWhere('ulid', $fieldSlug);
-                            })
-                                ->orWhere('ulid', $fieldSlug);
-                        })
-                        ->first();
-
-                    if ($fieldValue) {
-                        $mediaItems = $fieldValue->media()
-                            ->withPivot(['meta', 'position'])
-                            ->whereIn('media_ulid', array_values($ulidsToResolve))
-                            ->get()
-                            ->keyBy('ulid');
-
-                    }
-                } catch (\Exception $e) {
-                }
-            }
-
-            // Fallback for record media or direct query
-            if ((! $mediaItems || $mediaItems->isEmpty()) && $record && method_exists($record, 'media')) {
-                try {
-                    $mediaItems = $record->media()
-                        ->withPivot(['meta', 'position'])
-                        ->whereIn('media_ulid', array_values($ulidsToResolve))
-                        ->get()
-                        ->keyBy('ulid');
-                } catch (\Exception $e) {
-                }
-            }
-
-            if (! $mediaItems || $mediaItems->isEmpty()) {
-                $mediaItems = $mediaModel::whereIn('ulid', array_values($ulidsToResolve))->get()->keyBy('ulid');
-            }
-
-            foreach ($ulidsToResolve as $index => $ulid) {
-                $media = $mediaItems->get($ulid);
-                if ($media) {
-                    $resolved[$index] = Factory::mapMediaToValue($media);
-                } else {
-                    $resolved[$index] = $ulid; // Keep as string if not found
-                }
-            }
-        }
-
-        foreach ($preResolvedModels as $index => $model) {
-            $resolved[$index] = Factory::mapMediaToValue($model);
-        }
-
-        ksort($resolved); // Restore original order
-
-        $final = array_values($resolved);
-
-        // Deduplicate by UUID to prevent same file appearing twice
-        $uniqueUuids = [];
-        $final = array_filter($final, function ($item) use (&$uniqueUuids) {
-            $uuid = is_array($item) ? ($item['uuid'] ?? null) : (is_string($item) ? $item : null);
-            if (! $uuid) {
-                return true;
-            }
-            if (in_array($uuid, $uniqueUuids)) {
-                return false;
-            }
-            $uniqueUuids[] = $uuid;
-
-            return true;
-        });
-        $final = array_values($final);
-
-        return $final;
-    }
-
-    private static function extractValues(array $state): array
-    {
-        if (! array_is_list($state)) {
-            if (isset($state['uuid']) || isset($state['cdnUrl'])) {
-                return [$state];
-            }
-
-            return [];
-        }
-
-        return array_values(array_filter(array_map(function ($item) {
-            if (is_string($item)) {
-                return $item;
-            }
-
-            // If it's already a structured object, keep it.
-            if (is_array($item) && (isset($item['cdnUrl']) || isset($item['uuid']))) {
-                return $item;
-            }
-
-            if (is_object($item) && (isset($item->cdnUrl) || isset($item->uuid))) {
-                return $item;
-            }
-
-            // Allow objects (Models) if they implement ArrayAccess or are just objects we can read properties from
-            if (! is_array($item) && ! is_object($item)) {
-                return null;
-            }
-
-            // Check for 'edit' meta which contains cropped URL from our backend hydration
-            $cdnUrl = null;
-            $edit = $item['edit'] ?? null;
-            if ($edit) {
-                $edit = is_string($edit) ? json_decode($edit, true) : $edit;
-                $cdnUrl = $edit['cdnUrl'] ?? null;
-            }
-
-            if (! $cdnUrl) {
-                // Fallback to metadata
-                $meta = $item['metadata'] ?? null;
-                if ($meta) {
-                    $meta = is_string($meta) ? json_decode($meta, true) : $meta;
-                    $cdnUrl = $meta['cdnUrl'] ?? null;
-                }
-            }
-
-            if (! $cdnUrl) {
-                // Safely access array/object keys
-                $cdnUrl = $item['cdnUrl'] ?? $item['ucarecdn'] ?? null;
-            }
-
-            if ($cdnUrl) {
-                return $cdnUrl;
-            }
-
-            return $item['uuid'] ?? $item['filename'] ?? null;
-        }, $state)));
+        return $state;
     }
 
     private function transformUrls($value, string $from, string $to): mixed
@@ -578,22 +312,9 @@ class Uploadcare extends Field
             return $v;
         };
 
-        $replaceCdn = function ($v) use ($from, $to, &$replaceCdn) {
+        $replaceCdn = function ($v) use ($from, $to) {
             if (is_string($v)) {
                 return str_replace($from, $to, $v);
-            }
-
-            if (is_array($v)) {
-                if (array_is_list($v)) {
-                    return array_map($replaceCdn, $v);
-                }
-
-                // Protect associative arrays from shredding via array_map
-                foreach ($v as $key => $subValue) {
-                    $v[$key] = $replaceCdn($subValue);
-                }
-
-                return $v;
             }
 
             return $v;
@@ -601,7 +322,15 @@ class Uploadcare extends Field
 
         $value = $decodeIfJson($value);
 
-        return $replaceCdn($value);
+        if (is_string($value)) {
+            return $replaceCdn($value);
+        }
+
+        if (is_array($value)) {
+            return array_map($replaceCdn, $value);
+        }
+
+        return $value;
     }
 
     public function transformUrlsFromDb($value): mixed
@@ -612,43 +341,6 @@ class Uploadcare extends Field
     public function transformUrlsToDb($value): mixed
     {
         return $this->transformUrls($value, 'https://ucarecdn.com', $this->getDbCdnCname());
-    }
-
-    /**
-     * Get the normalized locale for Uploadcare.
-     * Uploadcare supports: de, en, es, fr, he, it, nl, pl, pt, ru, tr, uk, zh-TW, zh
-     */
-    public function getLocaleName(): string
-    {
-        $locale = app()->getLocale();
-
-        // Normalize locale: convert 'en_US' or 'en-US' to 'en', but keep 'zh-TW' as is
-        $normalized = str_replace('_', '-', $locale);
-
-        // Handle special cases
-        if (str_starts_with($normalized, 'zh')) {
-            // Check if it's zh-TW (Traditional Chinese)
-            if (str_contains($normalized, 'TW') || str_contains($normalized, 'tw')) {
-                return 'zh-TW';
-            }
-
-            // Otherwise return 'zh' (Simplified Chinese)
-            return 'zh';
-        }
-
-        // Extract base language code (e.g., 'en' from 'en-US' or 'en_US')
-        $baseLocale = explode('-', $normalized)[0];
-
-        // List of supported Uploadcare locales
-        $supportedLocales = ['de', 'en', 'es', 'fr', 'he', 'it', 'nl', 'pl', 'pt', 'ru', 'tr', 'uk', 'zh-TW', 'zh'];
-
-        // Check if base locale is supported
-        if (in_array($baseLocale, $supportedLocales)) {
-            return $baseLocale;
-        }
-
-        // Fallback to 'en' if locale is not supported
-        return 'en';
     }
 
     protected function setUp(): void
@@ -670,12 +362,6 @@ class Uploadcare extends Field
             }
 
             return $state;
-        });
-
-        $this->afterStateUpdated(function (Uploadcare $component, $state, $old) {
-            if ($state !== $old && ! empty($state)) {
-                Event::dispatch(new MediaUploading($state));
-            }
         });
     }
 }
