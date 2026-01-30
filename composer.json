@@ -20,16 +20,17 @@
         }
     ],
     "require": {
-        "php": "^8.1|^8.2|^8.3",
-        "filament/filament": "^4.0",
-        "filament/forms": "^4.0",
+        "php": "^8.2|^8.3",
+        "filament/filament": "^5.0",
+        "filament/forms": "^5.0",
+        "livewire/livewire": "^4.0",
         "spatie/laravel-package-tools": "^1.15.0"
     },
     "require-dev": {
         "larastan/larastan": "^3.0",
         "laravel/pint": "^1.0",
         "nunomaduro/collision": "^8.8.0",
-        "orchestra/testbench": "^9.0|^10.0",
+        "orchestra/testbench": "^10.0",
         "pestphp/pest": "^4.1",
         "pestphp/pest-plugin-arch": "^4.0",
         "pestphp/pest-plugin-laravel": "^4.0"
