@@ -304,8 +304,8 @@ export default function uploadcareField(config) {
             } else if (!this.initialState && !this.stateHasBeenInitialized) {
                 this.stateHasBeenInitialized = true;
                 this.uploadedFiles = (this.isMultiple || this.isWithMetadata) ? '[]' : '';
-                this.isLocalUpdate = true;
-                this.state = this.uploadedFiles;
+                // Don't set this.state during initialization - it triggers Livewire's dirty tracking
+                // The state is already synced via entangle(), we only need to track uploadedFiles locally
             }
         },
 
@@ -314,8 +314,8 @@ export default function uploadcareField(config) {
                 const parsedState = this.parseInitialState();
                 this.addFilesFromInitialState(api, parsedState);
                 this.stateHasBeenInitialized = true;
-                this.isLocalUpdate = true;
-                this.state = this.uploadedFiles;
+                // Don't set this.state during initialization - it triggers Livewire's dirty tracking
+                // The state is already synced via entangle(), we only need to track uploadedFiles locally
             } catch (e) {
                 console.error('Error parsing initialState:', e);
             }
