@@ -2,6 +2,7 @@
 
 namespace Backstage\Uploadcare\Forms\Components;
 
+use Backstage\Media\Models\Media;
 use Backstage\Uploadcare\Enums\Style;
 use Backstage\Uploadcare\Events\MediaUploading;
 use Backstage\UploadcareField\Uploadcare as Factory;
@@ -410,7 +411,7 @@ class Uploadcare extends Field
 
         if (! empty($ulidsToResolve)) {
             $mediaItems = null;
-            $mediaModel = config('backstage.media.model', \Backstage\Media\Models\Media::class);
+            $mediaModel = config('backstage.media.model', Media::class);
 
             // If we have a record and it has a values relationship (Backstage CMS), use it to get pivot metadata
             if ($record && $fieldName && method_exists($record, 'values')) {
