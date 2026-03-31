@@ -1,3 +1,7 @@
+@import "tailwindcss";
+@config "../../tailwind.config.js";
+@source "../../../uploadcare-field/resources/views";
+
 .uploadcare-wrapper {
     all: revert;
 }

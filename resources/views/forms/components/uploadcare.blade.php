@@ -1,4 +1,6 @@
-<div wire:key="uploadcare-wrapper-{{ $getStatePath() }}">
+<div 
+    wire:key="uploadcare-wrapper-{{ $getStatePath() }}"
+>
     <x-dynamic-component :component="$getFieldWrapperView()" :field="$field">
         @php
             $sourceList = $field->getSourceList();
@@ -29,7 +31,8 @@
                     isWithMetadata: @js($field->isWithMetadata()),
                     accept: '{{ $field->getAcceptedFileTypes() }}',
                     sourceList: '{{ $field->getSourceList() }}',
-                    uploaderStyle: '{{ $field->getUploaderStyle() }}'
+                    uploaderStyle: '{{ $field->getUploaderStyle() }}',
+                    localeName: '{{ $field->getLocaleName() }}'
                 })"
                 x-init="init()"
             >
@@ -44,6 +47,7 @@
                     @if($field->getCropPreset()) crop-preset="{{ $field->getCropPreset() }}" @endif
                     @if($field->shouldRemoveCopyright()) remove-copyright @endif
                     @if($field->isRequired()) required="true" @endif
+                    @if($field->getLocaleName() === 'en') locale-name="{{ $field->getLocaleName() }}" @else data-locale-name="{{ $field->getLocaleName() }}" @endif
                     cdn-cname="{{ $field->getCdnCname() }}">
                 </uc-config>
 
