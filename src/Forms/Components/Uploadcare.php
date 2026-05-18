@@ -344,7 +344,11 @@ class Uploadcare extends Field
         $items = $wasList ? $state : [$state];
 
         // Resolve Backstage Media ULIDs or Models into Uploadcare rich objects.
-        $resolved = self::resolveUlidsToUploadcareState($items, $this->getRecord(), $this->getFieldUlid());
+        // This resolution requires the optional backstage/media + backstage/uploadcare-field
+        // packages. When they are absent (standalone usage), pass items through unchanged.
+        $resolved = (class_exists(Media::class) && class_exists(Factory::class))
+            ? self::resolveUlidsToUploadcareState($items, $this->getRecord(), $this->getFieldUlid())
+            : $items;
 
         // Transform URLs from database format back to ucarecdn.com format for the widget
         if ($this->shouldTransformUrlsForDb()) {
